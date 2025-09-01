@@ -2,8 +2,10 @@
   <Folder Name="/src/">
     <Project Path="src/Darp.Results.Shouldy/Darp.Results.Shouldy.csproj" />
     <Project Path="src/Darp.Results/Darp.Results.csproj" />
+    <Project Path="src/Darp.Results.Analyzers/Darp.Results.Analyzers.csproj" />
   </Folder>
   <Folder Name="/test/">
     <Project Path="test/Darp.Results.Tests/Darp.Results.Tests.csproj" />
+    <Project Path="test/Darp.Results.Analyzers.Tests/Darp.Results.Analyzers.Tests.csproj" />
   </Folder>
 </Solution>

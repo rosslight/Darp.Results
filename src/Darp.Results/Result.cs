@@ -4,57 +4,71 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
+public static class X
+{
+    static X()
+    {
+        Result<int, int> x = Result.Ok<int, int>(1);
+        x.Map(x => "");
+    }
+}
+
 /// <summary> A result which might be in the Success or Error state. Option to attach Metadata as well </summary>
 /// <typeparam name="TValue"></typeparam>
 /// <typeparam name="TError"></typeparam>
 [DebuggerDisplay("{IsSuccess ? \"Success: \" + Value : \"Error: \" + Error,nq}")]
-public sealed class Result<TValue, TError>
+public abstract class Result<TValue, TError>
 {
-    private readonly TValue? _value;
-    private readonly TError? _error;
+    public sealed class Ok : Result<TValue, TError>
+    {
+        public new TValue Value { get; }
+
+        internal Ok(TValue value, IReadOnlyDictionary<string, object> metadata)
+            : base(metadata)
+        {
+            Value = value;
+        }
+    }
+
+    public sealed class Err : Result<TValue, TError>
+    {
+        public new TError Error { get; }
+
+        internal Err(TError error, IReadOnlyDictionary<string, object> metadata)
+            : base(metadata)
+        {
+            Error = error;
+        }
+    }
 
     /// <summary> True, if the result is in the 'success' state. False otherwise </summary>
-    public bool IsSuccess { get; }
+    public bool IsSuccess => this is Ok;
 
     /// <summary> True, if the result is in the 'error' state. False otherwise </summary>
-    public bool IsError => !IsSuccess;
+    public bool IsError => this is Err;
 
     /// <summary> The value of the result </summary>
     /// <exception cref="InvalidOperationException"> Thrown if the result is in the 'error' state </exception>
     public TValue Value =>
-        IsSuccess ? _value! : throw new InvalidOperationException("Result is not in success state");
+        this is Ok ok ? ok.Value : throw new InvalidOperationException("Result is not in success state");
 
     /// <summary> The value of the result or the default if the result is in error state </summary>
     // ReSharper disable once ConvertToAutoPropertyWhenPossible
-    public TValue? ValueOrDefault => _value;
+    public TValue? ValueOrDefault => this is Ok ok ? ok.Value : default;
 
     /// <summary> The error of the result </summary>
     /// <exception cref="InvalidOperationException"> Thrown if the result is in the 'success' state </exception>
     public TError Error =>
-        !IsSuccess ? _error! : throw new InvalidOperationException("Result is not in error state");
+        this is Err err ? err.Error : throw new InvalidOperationException("Result is not in error state");
 
     /// <summary> The optional metadata </summary>
     public IReadOnlyDictionary<string, object> Metadata { get; }
 
-    private Result(
-        bool isSuccess,
-        TValue? value,
-        TError? error,
-        IReadOnlyDictionary<string, object> metadata
-    )
+    private Result(IReadOnlyDictionary<string, object> metadata)
     {
-        (IsSuccess, _value, _error, Metadata) = (isSuccess, value, error, metadata);
+        Debug.Assert(this is Ok or Err, "Result has to extend either Ok or Err. No custom inheritance is allowed");
+        Metadata = metadata;
     }
-
-    internal static Result<TValue, TError> OkUnsafe(
-        TValue value,
-        IReadOnlyDictionary<string, object> metadata
-    ) => new(true, value, default, metadata);
-
-    internal static Result<TValue, TError> ErrorUnsafe(
-        TError error,
-        IReadOnlyDictionary<string, object> metadata
-    ) => new(false, default, error, metadata);
 
     /// <summary>
     /// Maps the result value to the <typeparamref name="TNewValue"/> by applying a function to a contained Ok value, leaving an Error value untouched.
@@ -66,9 +80,12 @@ public sealed class Result<TValue, TError>
     public Result<TNewValue, TError> Map<TNewValue>(Func<TValue, TNewValue> func)
     {
         ArgumentNullException.ThrowIfNull(func);
-        if (IsSuccess)
-            return Result<TNewValue, TError>.OkUnsafe(func(Value), Metadata);
-        return Result<TNewValue, TError>.ErrorUnsafe(Error, Metadata);
+        return this switch
+        {
+            Ok ok => new Result<TNewValue, TError>.Ok(func(ok.Value), Metadata),
+            Err err => new Result<TNewValue, TError>.Err(err.Error, Metadata),
+            _ => throw new UnreachableException(),
+        };
     }
 
     /// <summary>
@@ -81,7 +98,7 @@ public sealed class Result<TValue, TError>
     public TNewValue MapOr<TNewValue>(Func<TValue, TNewValue> func, TNewValue defaultValue)
     {
         ArgumentNullException.ThrowIfNull(func);
-        return TryGetValue(out var value) ? func(value) : defaultValue;
+        return TryGetValue(out TValue? value) ? func(value) : defaultValue;
     }
 
     /// <summary>
@@ -93,15 +110,23 @@ public sealed class Result<TValue, TError>
     public Result<TValue, TNewError> MapError<TNewError>(Func<TError, TNewError> func)
     {
         ArgumentNullException.ThrowIfNull(func);
-        if (IsSuccess)
-            return Result<TValue, TNewError>.OkUnsafe(Value, Metadata);
-        return Result<TValue, TNewError>.ErrorUnsafe(func(Error), Metadata);
+        return this switch
+        {
+            Ok ok => new Result<TValue, TNewError>.Ok(ok.Value, Metadata),
+            Err err => new Result<TValue, TNewError>.Err(func(err.Error), Metadata),
+            _ => throw new UnreachableException(),
+        };
     }
 
     public bool TryGetValue([NotNullWhen(true)] out TValue? value)
     {
-        value = _value;
-        return IsSuccess;
+        if (this is Ok ok)
+        {
+            value = ok.Value!;
+            return true;
+        }
+        value = default;
+        return false;
     }
 
     public bool TryGetValue<TNewValue>(
@@ -109,72 +134,85 @@ public sealed class Result<TValue, TError>
         [NotNullWhen(false)] out Result<TNewValue, TError>? failedResult
     )
     {
-        if (IsSuccess)
+        if (this is Ok ok)
         {
-            value = _value!;
+            value = ok.Value!;
             failedResult = null;
             return true;
         }
         value = default;
-        failedResult = Result<TNewValue, TError>.ErrorUnsafe(Error, Metadata);
+        failedResult = new Result<TNewValue, TError>.Err(Error, Metadata);
         return false;
     }
 
     public bool TryGetError([NotNullWhen(true)] out TError? error)
     {
-        error = _error;
-        return IsError;
+        if (this is Err err)
+        {
+            error = err.Error!;
+            return true;
+        }
+        error = default;
+        return false;
     }
 
     public TValue Expect(string message)
     {
-        if (IsError)
+        if (this is not Ok ok)
             throw new InvalidOperationException(message);
-        return Value;
+        return ok.Value;
     }
 
     public TError ExpectError(string message)
     {
-        if (IsSuccess)
+        if (this is not Err err)
             throw new InvalidOperationException(message);
-        return Error;
+        return err.Error;
     }
 
     public Result<TNewValue, TError> And<TNewValue>(Result<TNewValue, TError> result)
     {
-        if (IsError)
-            return Result<TNewValue, TError>.ErrorUnsafe(Error, Metadata);
-        return result;
+        return this switch
+        {
+            Ok => result,
+            Err err => new Result<TNewValue, TError>.Err(err.Error, Metadata),
+            _ => throw new UnreachableException(),
+        };
     }
 
     public Result<TNewValue, TError> And<TNewValue>(Func<Result<TNewValue, TError>> lazyResult)
     {
-        ArgumentNullException.ThrowIfNull(lazyResult);
-        if (IsError)
-            return Result<TNewValue, TError>.ErrorUnsafe(Error, Metadata);
-        return lazyResult();
+        return this switch
+        {
+            Ok => lazyResult(),
+            Err err => new Result<TNewValue, TError>.Err(err.Error, Metadata),
+            _ => throw new UnreachableException(),
+        };
     }
 
     public Result<TValue, TError> Or(Result<TValue, TError> result)
     {
-        if (IsSuccess)
-            return this;
-        return result;
+        return this switch
+        {
+            Ok => this,
+            Err => result,
+            _ => throw new UnreachableException(),
+        };
     }
 
     public Result<TValue, TError> Or(Func<Result<TValue, TError>> lazyResult)
     {
-        ArgumentNullException.ThrowIfNull(lazyResult);
-        if (IsSuccess)
-            return this;
-        return lazyResult();
+        return this switch
+        {
+            Ok => this,
+            Err => lazyResult(),
+            _ => throw new UnreachableException(),
+        };
     }
 
-    public static implicit operator Result<TValue, TError>(TValue value) =>
-        Result.Ok<TValue, TError>(value);
+    public static implicit operator Result<TValue, TError>(TValue value) => Result.Ok<TValue, TError>(value);
 
-    public static implicit operator Result<TValue, TError>(TError error) =>
-        Result.Error<TValue, TError>(error);
+    public static implicit operator Result<TValue, TError>(TError error) => Result.Error<TValue, TError>(error);
 
     public IEnumerator<TValue> GetEnumerator() => AsEnumerable().GetEnumerator();
 
@@ -190,40 +228,31 @@ public sealed class Result<TValue, TError>
         var newMetadata = new ReadOnlyDictionary<string, object>(
             new Dictionary<string, object>(Metadata) { [key] = value }
         );
-        if (IsSuccess)
-            return OkUnsafe(Value, newMetadata);
-        return ErrorUnsafe(Error, newMetadata);
+        return this switch
+        {
+            Ok ok => new Ok(ok.Value, newMetadata),
+            Err err => new Err(err.Error, newMetadata),
+            _ => throw new UnreachableException(),
+        };
     }
 
     public Result<TValue, TError> WithMetadata(IDictionary<string, object> metadata)
     {
-        var newMetadata = new ReadOnlyDictionary<string, object>(
-            Metadata.Concat(metadata).ToDictionary()
-        );
-        if (IsSuccess)
-            return OkUnsafe(Value, newMetadata);
-        return ErrorUnsafe(Error, newMetadata);
-    }
-
-    public void Deconstruct(out bool isSuccess, out TValue? value, out TError? error)
-    {
-        (isSuccess, value, error) = (IsSuccess, _value, _error);
-    }
-
-    public void Deconstruct(out bool isSuccess, out TValue? value)
-    {
-        (isSuccess, value) = (IsSuccess, _value);
+        var newMetadata = new ReadOnlyDictionary<string, object>(Metadata.Concat(metadata).ToDictionary());
+        return this switch
+        {
+            Ok ok => new Ok(ok.Value, newMetadata),
+            Err err => new Err(err.Error, newMetadata),
+            _ => throw new UnreachableException(),
+        };
     }
 }
 
 public static class Result
 {
-    public static Result<TValue, TError> Ok<TValue, TError>(
-        TValue value,
-        IDictionary<string, object>? metadata = null
-    )
+    public static Result<TValue, TError> Ok<TValue, TError>(TValue value, IDictionary<string, object>? metadata = null)
     {
-        return Result<TValue, TError>.OkUnsafe(
+        return new Result<TValue, TError>.Ok(
             value,
             metadata is null
                 ? ReadOnlyDictionary<string, object>.Empty
@@ -236,7 +265,7 @@ public static class Result
         IDictionary<string, object>? metadata = null
     )
     {
-        return Result<TValue, TError>.ErrorUnsafe(
+        return new Result<TValue, TError>.Err(
             error,
             metadata is null
                 ? ReadOnlyDictionary<string, object>.Empty
@@ -244,26 +273,24 @@ public static class Result
         );
     }
 
-    public static Result<TValue, TError> Flatten<TValue, TError>(
-        Result<Result<TValue, TError>, TError> result
-    )
+    public static Result<TValue, TError> Flatten<TValue, TError>(Result<Result<TValue, TError>, TError> result)
     {
         ArgumentNullException.ThrowIfNull(result);
-        if (result.TryGetValue(out Result<TValue, TError>? value))
-            return value;
-        return result.Error;
+        return result switch
+        {
+            Result<Result<TValue, TError>, TError>.Ok ok => ok.Value,
+            Result<Result<TValue, TError>, TError>.Err err => new Result<TValue, TError>.Err(err.Error, err.Metadata),
+            _ => throw new UnreachableException(),
+        };
     }
 
     public delegate bool TryParseFunc<in TIn, TOut>(TIn input, out TOut output);
 
-    public static Result<TOut, StandardError> From<TIn, TOut>(
-        TIn input,
-        TryParseFunc<TIn, TOut> tryParse
-    )
+    public static Result<TOut, StandardError> From<TIn, TOut>(TIn input, TryParseFunc<TIn, TOut> tryParse)
     {
         try
         {
-            if (tryParse(input, out var output))
+            if (tryParse(input, out TOut output))
                 return output;
             return StandardError.TryPatternFailed;
         }

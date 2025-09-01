@@ -1,9 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
-
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="..\Darp.Results.Analyzers\Darp.Results.Analyzers.csproj"
+      OutputItemType="Analyzer"
+      ReferenceOutputAssembly="false"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
 </Project>

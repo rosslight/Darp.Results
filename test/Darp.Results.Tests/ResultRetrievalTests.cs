@@ -70,17 +70,21 @@ public sealed class ResultRetrievalTests
     {
         Result<int, string> r = Result.Try(() => 1).MapError(e => e.Message);
         var result = Result.From<string, int>("42", int.TryParse);
+
         // Should error
         _ = result.Value;
         _ = result.Error;
 
+        // Warning
+        Result.From<string, int>("42", int.TryParse); // Result not checked
+
         // Should info
         if (result.IsError)
             return result.Error; // Loses optional metadata, replace with if (result.TryGetError(out Result<string, Error> resultWithError)) return resultWithError;
-        return r.IsSuccess switch
+        return r switch
         {
-            true => r.Value.ToString(),
-            false => StandardError.ExceptionOccured,
+            Result<int, string>.Ok ok => ok.Value.ToString(),
+            _ => StandardError.ExceptionOccured,
         };
     }
 }
