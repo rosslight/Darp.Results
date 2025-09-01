@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Darp.Results.Shouldy/Darp.Results.Shouldy.csproj" />
+    <Project Path="src/Darp.Results/Darp.Results.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Darp.Results.Tests/Darp.Results.Tests.csproj" />
+  </Folder>
+</Solution>

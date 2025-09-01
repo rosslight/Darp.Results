@@ -1,0 +1,17 @@
+# IDEs
+.idea/
+.vscode/
+*.Dotsettings.user
+.vs/
+*.[Cc]ache
+!?*.[Cc]ache/
+*.user
+
+# Build results
+[Bb]in/
+[Oo]bj/
+.avalonia-build-tasks/
+
+# Verify
+*.received.*
+*.received/
