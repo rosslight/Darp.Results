@@ -1,11 +1,12 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
 
 namespace Darp.Results.Analyzers.Tests;
 
-public sealed class ResultAnalyzerTest
-    : CSharpAnalyzerTest<Rules.AbstractTypesShouldNotHaveConstructorsAnalyzer, DefaultVerifier>
+public sealed class ResultAnalyzerTest<TAnalyzer> : CSharpAnalyzerTest<TAnalyzer, DefaultVerifier>
+    where TAnalyzer : DiagnosticAnalyzer, new()
 {
     public ResultAnalyzerTest()
     {

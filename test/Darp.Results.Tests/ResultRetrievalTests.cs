@@ -84,7 +84,7 @@ public sealed class ResultRetrievalTests
         return r switch
         {
             Result<int, string>.Ok ok => ok.Value.ToString(),
-            _ => StandardError.ExceptionOccured,
+            Result<int, string>.Err => StandardError.ExceptionOccured,
         };
     }
 }

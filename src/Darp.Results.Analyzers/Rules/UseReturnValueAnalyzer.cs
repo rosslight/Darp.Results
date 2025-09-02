@@ -10,8 +10,8 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzer : DiagnosticA
 {
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.UseReturnValueIdentifier,
-        title: "Abstract types should not have public or internal constructors",
-        messageFormat: "Abstract types should not have public or internal constructors",
+        title: "The return value of a result should be checked",
+        messageFormat: "Because the result of {0} is not checked, a failed result might go unnoticed. Check the return value.",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -35,14 +35,13 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzer : DiagnosticA
         ITypeSymbol? returnType = invocation.Type;
         if (!returnType.IsOrExtendsResult())
             return;
-        if (!invocation.IsUnused())
+        if (!invocation.IsUnused(countDiscardsAsUnused: false))
             return;
 
         // Build a helpful diagnostic.
-        string methodName = invocation.TargetMethod.ToDisplayString(SymbolDisplayFormat.CSharpShortErrorMessageFormat);
-        string returnTypeDisplay = returnType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+        string methodName = invocation.TargetMethod.Name;
 
-        var diagnostic = Diagnostic.Create(s_rule, invocation.Syntax.GetLocation(), methodName, returnTypeDisplay);
+        var diagnostic = Diagnostic.Create(s_rule, invocation.Syntax.GetLocation(), methodName);
         context.ReportDiagnostic(diagnostic);
     }
 }

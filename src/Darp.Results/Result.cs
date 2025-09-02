@@ -4,15 +4,6 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
-public static class X
-{
-    static X()
-    {
-        Result<int, int> x = Result.Ok<int, int>(1);
-        x.Map(x => "");
-    }
-}
-
 /// <summary> A result which might be in the Success or Error state. Option to attach Metadata as well </summary>
 /// <typeparam name="TValue"></typeparam>
 /// <typeparam name="TError"></typeparam>

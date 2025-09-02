@@ -26,7 +26,7 @@ internal static class Helpers
         return false;
     }
 
-    public static bool IsUnused(this IInvocationOperation invocation, bool includeDiscardAssignments = true)
+    public static bool IsUnused(this IInvocationOperation invocation, bool countDiscardsAsUnused = false)
     {
         // Climb over implicit conversions.
         IOperation node = invocation;
@@ -47,7 +47,7 @@ internal static class Helpers
             return true;
 
         // Case 2: `_ = Call();`
-        if (includeDiscardAssignments && node.Parent is ISimpleAssignmentOperation { Target: IDiscardOperation })
+        if (countDiscardsAsUnused && node.Parent is ISimpleAssignmentOperation { Target: IDiscardOperation })
         {
             return true;
         }
