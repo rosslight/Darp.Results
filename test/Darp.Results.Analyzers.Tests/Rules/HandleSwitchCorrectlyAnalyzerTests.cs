@@ -1,4 +1,5 @@
 using Darp.Results.Analyzers.Rules;
+using Darp.Results.CodeFixers.Rules;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using Verifier = Microsoft.CodeAnalysis.Testing.AnalyzerVerifier<
@@ -11,15 +12,6 @@ namespace Darp.Results.Analyzers.Tests.Rules;
 
 public sealed class HandleSwitchCorrectlyAnalyzerTests
 {
-    Result<int, string> Do(Result<int, string> r)
-    {
-        return r switch
-        {
-            Result<int, string>.Ok ok => ok.Value,
-            Result<int, string>.Err err => err.Error,
-        };
-    }
-
     [Fact]
     public async Task CompleteSwitch_ShouldNotError()
     {
@@ -75,12 +67,24 @@ public sealed class HandleSwitchCorrectlyAnalyzerTests
                 };
             }
             """;
+        const string fixedText = """
+            Result<int, string> Do(Result<int, string> r) {
+                return r switch {
+                    Result<int, string>.Ok ok => ok.Value,
+                    Result<int, string>.Err => throw new System.NotImplementedException()
+                };
+            }
+            """;
 
         DiagnosticResult expected = Verifier
             .Diagnostic()
             .WithSpan(7, 14, 7, 20)
             .WithArguments("Result<int, string>.Err");
-        await ResultHelpers.VerifyInMethodAsync<HandleSwitchCorrectlyAnalyzer>(text, expected);
+        await ResultHelpers.VerifyCodeFixAsync<HandleSwitchCorrectlyAnalyzer, HandleSwitchCorrectlyCodeFixer>(
+            text,
+            expected,
+            fixedText
+        );
     }
 
     [Fact]
@@ -93,12 +97,24 @@ public sealed class HandleSwitchCorrectlyAnalyzerTests
                 };
             }
             """;
+        const string fixedText = """
+            Result<int, string> Do(Result<int, string> r) {
+                return r switch {
+                    Result<int, string>.Err err => err.Error,
+                    Result<int, string>.Ok => throw new System.NotImplementedException()
+                };
+            }
+            """;
 
         DiagnosticResult expected = Verifier
             .Diagnostic()
             .WithSpan(7, 14, 7, 20)
             .WithArguments("Result<int, string>.Ok");
-        await ResultHelpers.VerifyInMethodAsync<HandleSwitchCorrectlyAnalyzer>(text, expected);
+        await ResultHelpers.VerifyCodeFixAsync<HandleSwitchCorrectlyAnalyzer, HandleSwitchCorrectlyCodeFixer>(
+            text,
+            expected,
+            fixedText
+        );
     }
 
     [Fact]
@@ -110,11 +126,23 @@ public sealed class HandleSwitchCorrectlyAnalyzerTests
                 };
             }
             """;
+        const string fixedText = """
+            Result<int, string> Do(Result<int, string> r) {
+                return r switch {
+                    Result<int, string>.Ok => throw new System.NotImplementedException(),
+                    Result<int, string>.Err => throw new System.NotImplementedException()
+                };
+            }
+            """;
 
         DiagnosticResult expected = Verifier
             .Diagnostic()
             .WithSpan(7, 14, 7, 20)
             .WithArguments("Result<int, string>.Ok");
-        await ResultHelpers.VerifyInMethodAsync<HandleSwitchCorrectlyAnalyzer>(text, expected);
+        await ResultHelpers.VerifyCodeFixAsync<HandleSwitchCorrectlyAnalyzer, HandleSwitchCorrectlyCodeFixer>(
+            text,
+            expected,
+            fixedText
+        );
     }
 }

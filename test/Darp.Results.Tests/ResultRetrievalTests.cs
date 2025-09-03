@@ -54,16 +54,40 @@ public sealed class ResultRetrievalTests
 
     private Result<int, Error> TryGetValueEarlyReturn(Result<string, Error> result)
     {
-        if (!result.TryGetValue(out string? value, out Result<int, Error>? errorResult))
+        if (!result.TryGetValue(out string? value, out Result<int, Error>.Err? errorResult))
             return errorResult;
         return 1;
     }
 
     private Result<string, Error> TryGetValueEarlyReturn2(Result<string, Error> result)
     {
-        if (!result.TryGetValue(out string? value, out Result<string, Error>? errorResult))
+        if (!result.TryGetValue(out string? value, out Result<string, Error>.Err? errorResult))
             return errorResult;
         return value;
+    }
+
+    public Result<string, StandardError> Xx(Result<int, StandardError> r)
+    {
+        if (!r.TryGetValue(out int value, out Result<string, StandardError>.Err? e1))
+            return e1;
+        if (r is Result<int, StandardError>.Err err)
+            return err.As<string>();
+        return "Ok";
+    }
+
+    public Result<int, StandardError> Xxx(Result<int, StandardError> r)
+    {
+        if (!r.TryGetValue(out int v1, out Result<int, StandardError>.Err? e1))
+            return e1;
+        if (r is Result<int, StandardError>.Err e2)
+            return e2;
+        if (!r.TryGetValue(out int v2))
+            return r;
+        return r switch
+        {
+            Result<int, StandardError>.Ok ok => ok.Value,
+            Result<int, StandardError>.Err err => err.Error,
+        };
     }
 
     public Result<string, StandardError> X()
@@ -72,19 +96,18 @@ public sealed class ResultRetrievalTests
         var result = Result.From<string, int>("42", int.TryParse);
 
         // Should error
-        _ = result.Value;
-        _ = result.Error;
+        _ = result.Unwrap();
 
         // Warning
         Result.From<string, int>("42", int.TryParse); // Result not checked
         // Should info
-        if (result.IsError)
-            return result.Error; // Loses optional metadata, replace with if (result.TryGetError(out Result<string, Error> resultWithError)) return resultWithError;
+        //if (result.IsError)
+        //    return result.Error; // Loses optional metadata, replace with if (result.TryGetError(out Result<string, Error> resultWithError)) return resultWithError;
         Result<Result<int, string>, string> rr = null!;
         return Result.From<string, int>("42", int.TryParse) switch
         {
-            Result<int, StandardError>.Ok ok => ok.Value.ToString(),
-            Result<int, StandardError>.Err err => err.Value.ToString(),
+            Result<int, StandardError>.Ok => throw new System.NotImplementedException(),
+            Result<int, StandardError>.Err => throw new System.NotImplementedException(),
         };
     }
 }

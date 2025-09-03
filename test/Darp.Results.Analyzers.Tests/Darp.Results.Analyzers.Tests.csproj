@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.XUnit" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
@@ -15,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Darp.Results.Analyzers\Darp.Results.Analyzers.csproj" />
+    <ProjectReference Include="..\..\src\Darp.Results.CodeFixers\Darp.Results.CodeFixers.csproj" />
     <ProjectReference Include="..\..\src\Darp.Results\Darp.Results.csproj" />
   </ItemGroup>
 </Project>

@@ -2,11 +2,6 @@ using System.Globalization;
 
 namespace Darp.Results.Analyzers;
 
-internal static class RuleCategories
-{
-    public const string Usage = "Usage";
-}
-
 internal static class RuleIdentifiers
 {
     public const string UseReturnValueIdentifier = "DR0001";

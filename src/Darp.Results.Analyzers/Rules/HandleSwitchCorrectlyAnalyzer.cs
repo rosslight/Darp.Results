@@ -56,10 +56,19 @@ public sealed class HandleSwitchCorrectlyAnalyzer : DiagnosticAnalyzer
         // Ok, if both ok and err exist
         if (hasOk && hasErr)
             return;
-        string name =
-            resultType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) + (hasOk ? ".Err" : ".Ok");
         var syntax = (SwitchExpressionSyntax)expression.Syntax;
-        var diagnostic = Diagnostic.Create(s_missingArmRule, syntax.SwitchKeyword.GetLocation(), name);
+        string resultName = resultType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+        var missingArms = new Dictionary<string, string?>();
+        if (!hasOk)
+            missingArms.Add("OkName", $"{resultName}.Ok");
+        if (!hasErr)
+            missingArms.Add("ErrName", $"{resultName}.Err");
+        var diagnostic = Diagnostic.Create(
+            s_missingArmRule,
+            syntax.SwitchKeyword.GetLocation(),
+            missingArms.ToImmutableDictionary(),
+            missingArms.FirstOrDefault().Value
+        );
         context.ReportDiagnostic(diagnostic);
     }
 }

@@ -1,7 +1,11 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Testing;
+using Microsoft.CodeAnalysis.CSharp.Testing.XUnit;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
+using Microsoft.CodeAnalysis.Testing.Verifiers;
 
 namespace Darp.Results.Analyzers.Tests;
 
@@ -59,6 +63,35 @@ public static class ResultHelpers
                 return solution.WithProjectCompilationOptions(projectId, opts);
             }
         );
+        return test.RunAsync(CancellationToken.None);
+    }
+
+    public static Task VerifyCodeFixAsync<TAnalyzer, TCodeFix>(
+        string source,
+        DiagnosticResult expected,
+        string fixedSource
+    )
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        where TCodeFix : CodeFixProvider, new() =>
+        VerifyCodeFixAsync<TAnalyzer, TCodeFix>(source, [expected], fixedSource);
+
+    public static Task VerifyCodeFixAsync<TAnalyzer, TCodeFix>(
+        string source,
+        DiagnosticResult[] expected,
+        string fixedSource
+    )
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        where TCodeFix : CodeFixProvider, new()
+    {
+        var test = new CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>
+        {
+            TestCode = InMethod(source),
+            FixedCode = InMethod(fixedSource),
+        };
+        test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(Result<,>).Assembly.Location));
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.ExpectedDiagnostics.AddRange(expected);
+
         return test.RunAsync(CancellationToken.None);
     }
 }

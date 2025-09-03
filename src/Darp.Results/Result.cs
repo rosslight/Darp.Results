@@ -1,4 +1,6 @@
-﻿namespace Darp.Results;
+﻿using System.Diagnostics.Contracts;
+
+namespace Darp.Results;
 
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -12,7 +14,7 @@ public abstract class Result<TValue, TError>
 {
     public sealed class Ok : Result<TValue, TError>
     {
-        public new TValue Value { get; }
+        public TValue Value { get; }
 
         internal Ok(TValue value, IReadOnlyDictionary<string, object> metadata)
             : base(metadata)
@@ -23,35 +25,38 @@ public abstract class Result<TValue, TError>
 
     public sealed class Err : Result<TValue, TError>
     {
-        public new TError Error { get; }
+        public TError Error { get; }
 
         internal Err(TError error, IReadOnlyDictionary<string, object> metadata)
             : base(metadata)
         {
             Error = error;
         }
+
+        public Result<TNewValue, TError>.Err As<TNewValue>() => new(Error, Metadata);
     }
 
-    /// <summary> True, if the result is in the 'success' state. False otherwise </summary>
-    public bool IsSuccess => this is Ok;
-
-    /// <summary> True, if the result is in the 'error' state. False otherwise </summary>
-    public bool IsError => this is Err;
-
-    /// <summary> The value of the result </summary>
-    /// <exception cref="InvalidOperationException"> Thrown if the result is in the 'error' state </exception>
-    public TValue Value =>
-        this is Ok ok ? ok.Value : throw new InvalidOperationException("Result is not in success state");
-
-    /// <summary> The value of the result or the default if the result is in error state </summary>
-    // ReSharper disable once ConvertToAutoPropertyWhenPossible
-    public TValue? ValueOrDefault => this is Ok ok ? ok.Value : default;
-
-    /// <summary> The error of the result </summary>
-    /// <exception cref="InvalidOperationException"> Thrown if the result is in the 'success' state </exception>
-    public TError Error =>
-        this is Err err ? err.Error : throw new InvalidOperationException("Result is not in error state");
-
+    /*
+        /// <summary> True, if the result is in the 'success' state. False otherwise </summary>
+        public bool IsSuccess => this is Ok;
+    
+        /// <summary> True, if the result is in the 'error' state. False otherwise </summary>
+        public bool IsError => this is Err;
+    
+        /// <summary> The value of the result </summary>
+        /// <exception cref="InvalidOperationException"> Thrown if the result is in the 'error' state </exception>
+        public TValue Value =>
+            this is Ok ok ? ok.Value : throw new InvalidOperationException("Result is not in success state");
+    
+        /// <summary> The value of the result or the default if the result is in error state </summary>
+        // ReSharper disable once ConvertToAutoPropertyWhenPossible
+        public TValue? ValueOrDefault => this is Ok ok ? ok.Value : default;
+    
+        /// <summary> The error of the result </summary>
+        /// <exception cref="InvalidOperationException"> Thrown if the result is in the 'success' state </exception>
+        public TError Error =>
+            this is Err err ? err.Error : throw new InvalidOperationException("Result is not in error state");
+    */
     /// <summary> The optional metadata </summary>
     public IReadOnlyDictionary<string, object> Metadata { get; }
 
@@ -120,20 +125,41 @@ public abstract class Result<TValue, TError>
         return false;
     }
 
+    public bool TryGetValue([NotNullWhen(true)] out TValue? value, [NotNullWhen(false)] out Err? error)
+    {
+        switch (this)
+        {
+            case Ok ok:
+                value = ok.Value!;
+                error = null;
+                return true;
+            case Err err:
+                value = default;
+                error = err;
+                return false;
+            default:
+                throw new UnreachableException("Result should only be Ok or Err");
+        }
+    }
+
     public bool TryGetValue<TNewValue>(
         [NotNullWhen(true)] out TValue? value,
-        [NotNullWhen(false)] out Result<TNewValue, TError>? failedResult
+        [NotNullWhen(false)] out Result<TNewValue, TError>.Err? error
     )
     {
-        if (this is Ok ok)
+        switch (this)
         {
-            value = ok.Value!;
-            failedResult = null;
-            return true;
+            case Ok ok:
+                value = ok.Value!;
+                error = null;
+                return true;
+            case Err err:
+                value = default;
+                error = err.As<TNewValue>();
+                return false;
+            default:
+                throw new UnreachableException("Result should only be Ok or Err");
         }
-        value = default;
-        failedResult = new Result<TNewValue, TError>.Err(Error, Metadata);
-        return false;
     }
 
     public bool TryGetError([NotNullWhen(true)] out TError? error)
@@ -147,6 +173,24 @@ public abstract class Result<TValue, TError>
         return false;
     }
 
+    public bool TryGetError([NotNullWhen(true)] out TError? error, [NotNullWhen(false)] out Ok? success)
+    {
+        switch (this)
+        {
+            case Ok ok:
+                error = default!;
+                success = ok;
+                return false;
+            case Err err:
+                error = err.Error!;
+                success = null;
+                return true;
+            default:
+                throw new UnreachableException("Result should only be Ok or Err");
+        }
+    }
+
+    [Pure]
     public TValue Expect(string message)
     {
         if (this is not Ok ok)
@@ -154,6 +198,7 @@ public abstract class Result<TValue, TError>
         return ok.Value;
     }
 
+    [Pure]
     public TError ExpectError(string message)
     {
         if (this is not Err err)
@@ -209,9 +254,9 @@ public abstract class Result<TValue, TError>
 
     public IEnumerable<TValue> AsEnumerable()
     {
-        if (IsError)
+        if (this is not Ok ok)
             yield break;
-        yield return Value;
+        yield return ok.Value;
     }
 
     public Result<TValue, TError> WithMetadata(string key, object value)
@@ -237,6 +282,18 @@ public abstract class Result<TValue, TError>
             _ => throw new UnreachableException(),
         };
     }
+
+    [Pure]
+    public TValue Unwrap() =>
+        TryGetValue(out TValue? value)
+            ? value
+            : throw new InvalidOperationException("Could not unwrap value. Result is not a success");
+
+    [Pure]
+    public TError UnwrapError() =>
+        TryGetError(out TError? error)
+            ? error
+            : throw new InvalidOperationException("Could not unwrap error. Result is not a error");
 }
 
 public static class Result
