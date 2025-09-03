@@ -66,23 +66,42 @@ public sealed class HandleSwitchCorrectlyCodeFixer : CodeFixProvider
         // Build new arms: <identifier> => throw new ...
         IEnumerable<SwitchExpressionArmSyntax> newArms = toAdd.Select(p =>
             SwitchExpressionArm(
-                    ConstantPattern(ParseExpression(p)),
-                    whenClause: null,
-                    expression: notImplementedExpression
-                )
-                .WithAdditionalAnnotations(Formatter.Annotation)
+                ConstantPattern(ParseExpression(p)),
+                whenClause: null,
+                expression: notImplementedExpression
+            )
         );
 
+        // Calculate position to insert at
+        SemanticModel? model = await document.GetSemanticModelAsync(cancellationToken);
+        if (model is null)
+            return document;
+
         SeparatedSyntaxList<SwitchExpressionArmSyntax> currentArms = nodeToFix.Arms;
-        int insertIndex = currentArms.IndexOf(x => x.Pattern is DiscardPatternSyntax);
+        int insertIndex = currentArms.IndexOf(Predicate);
         if (insertIndex < 0)
-            insertIndex = currentArms.Count - 1;
+            insertIndex = currentArms.Count;
 
         SwitchExpressionSyntax updatedSwitch = nodeToFix.WithArms(
-            SeparatedList(currentArms.InsertRange(insertIndex + 1, newArms))
+            SeparatedList(
+                currentArms
+                    .InsertRange(insertIndex, newArms)
+                    .Select(x => x.WithAdditionalAnnotations(Formatter.Annotation))
+            )
         );
 
         editor.ReplaceNode(nodeToFix, updatedSwitch);
         return editor.GetChangedDocument();
+
+        bool Predicate(SwitchExpressionArmSyntax syntax)
+        {
+            if (syntax.Pattern is DiscardPatternSyntax)
+                return true;
+            if (syntax.Pattern is not DeclarationPatternSyntax declarationPatternSyntax)
+                return false;
+            var declarationType = model.GetSymbolInfo(declarationPatternSyntax.Type).Symbol as ITypeSymbol;
+            return declarationType?.BaseType.IsOrExtendsResult() is true
+                && declarationType.IsErrorResult(declarationType.BaseType);
+        }
     }
 }

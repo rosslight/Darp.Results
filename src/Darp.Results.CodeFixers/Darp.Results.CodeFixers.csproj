@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)\..\Darp.Results.Analyzers\RuleIdentifiers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Darp.Results.Analyzers\Helpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />

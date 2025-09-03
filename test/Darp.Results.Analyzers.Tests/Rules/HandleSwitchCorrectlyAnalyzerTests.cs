@@ -100,8 +100,8 @@ public sealed class HandleSwitchCorrectlyAnalyzerTests
         const string fixedText = """
             Result<int, string> Do(Result<int, string> r) {
                 return r switch {
-                    Result<int, string>.Err err => err.Error,
-                    Result<int, string>.Ok => throw new System.NotImplementedException()
+                    Result<int, string>.Ok => throw new System.NotImplementedException(),
+                    Result<int, string>.Err err => err.Error
                 };
             }
             """;
