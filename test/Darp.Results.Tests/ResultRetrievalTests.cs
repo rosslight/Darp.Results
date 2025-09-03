@@ -77,14 +77,14 @@ public sealed class ResultRetrievalTests
 
         // Warning
         Result.From<string, int>("42", int.TryParse); // Result not checked
-
         // Should info
         if (result.IsError)
             return result.Error; // Loses optional metadata, replace with if (result.TryGetError(out Result<string, Error> resultWithError)) return resultWithError;
-        return r switch
+        Result<Result<int, string>, string> rr = null!;
+        return Result.From<string, int>("42", int.TryParse) switch
         {
-            Result<int, string>.Ok ok => ok.Value.ToString(),
-            Result<int, string>.Err => StandardError.ExceptionOccured,
+            Result<int, StandardError>.Ok ok => ok.Value.ToString(),
+            Result<int, StandardError>.Err err => err.Value.ToString(),
         };
     }
 }

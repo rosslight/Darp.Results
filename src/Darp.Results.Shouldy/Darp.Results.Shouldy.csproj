@@ -8,6 +8,6 @@
     <ProjectReference Include="..\..\src\Darp.Results\Darp.Results.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Shouldly" Version="4.3.0" />
+    <PackageReference Include="Shouldly" />
   </ItemGroup>
 </Project>

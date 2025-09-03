@@ -8,6 +8,8 @@ internal static class Helpers
 {
     public const string ResultNamespace = "Darp.Results";
     public const string ResultName = "Result";
+    public const string ResultErrName = "Err";
+    public const string ResultOkName = "Ok";
 
     public static bool IsOrExtendsResult([NotNullWhen(true)] this ITypeSymbol? type)
     {
@@ -24,6 +26,20 @@ internal static class Helpers
             type = named.BaseType;
         }
         return false;
+    }
+
+    public static bool IsErrorResult([NotNullWhen(true)] this ITypeSymbol? type, ITypeSymbol resultType)
+    {
+        if (type is not { Name: ResultErrName })
+            return false;
+        return SymbolEqualityComparer.Default.Equals(type.BaseType, resultType);
+    }
+
+    public static bool IsOkResult([NotNullWhen(true)] this ITypeSymbol? type, ITypeSymbol resultType)
+    {
+        if (type is not { Name: ResultOkName })
+            return false;
+        return SymbolEqualityComparer.Default.Equals(type.BaseType, resultType);
     }
 
     public static bool IsUnused(this IInvocationOperation invocation, bool countDiscardsAsUnused = false)

@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -10,7 +12,7 @@ public static class ResultHelpers
         return $$"""
             using Darp.Results;
 
-            public static class MyTestClass
+            internal static class MyTestClass
             {
                 public static void MyMethod() {
             {{body}}
@@ -26,5 +28,37 @@ public static class ResultHelpers
             InMethod(methodBody),
             expected
         );
+    }
+
+    public static Task VerifyInMethodAsync<TAnalyzer>(
+        string methodBody,
+        string[] allowedCompilerDiagnostics,
+        params DiagnosticResult[] expected
+    )
+        where TAnalyzer : DiagnosticAnalyzer, new()
+    {
+        var test = new ResultAnalyzerTest<TAnalyzer> { TestCode = InMethod(methodBody) };
+        test.ExpectedDiagnostics.AddRange(expected);
+        test.CompilerDiagnostics = CompilerDiagnostics.Warnings; // Suppress everything globally, then re-enable CS8509 as a warning
+        test.SolutionTransforms.Add(
+            (solution, projectId) =>
+            {
+                Project project = solution.GetProject(projectId)!;
+                var opts = (CSharpCompilationOptions)project.CompilationOptions!;
+
+                opts = opts.WithGeneralDiagnosticOption(ReportDiagnostic.Suppress)
+                    .WithSpecificDiagnosticOptions(
+                        opts.SpecificDiagnosticOptions.SetItems(
+                            allowedCompilerDiagnostics.Select(x => new KeyValuePair<string, ReportDiagnostic>(
+                                x,
+                                ReportDiagnostic.Warn
+                            ))
+                        )
+                    );
+
+                return solution.WithProjectCompilationOptions(projectId, opts);
+            }
+        );
+        return test.RunAsync(CancellationToken.None);
     }
 }
