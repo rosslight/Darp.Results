@@ -1,8 +1,11 @@
+using System.Diagnostics;
+
 namespace Darp.Results;
 
 partial class Result<TValue, TError>
 {
     /// <summary> Represents a successful result. </summary>
+    [DebuggerDisplay("{\"Ok: \" + Value,nq}")]
     public sealed class Ok : Result<TValue, TError>
     {
         /// <summary> The value of the result. </summary>
@@ -16,9 +19,22 @@ partial class Result<TValue, TError>
         {
             Value = value;
         }
+
+        /// <inheritdoc />
+        public override bool Equals(Result<TValue, TError>? other)
+        {
+            return other is Ok ok && EqualityComparer<TValue>.Default.Equals(Value, ok.Value);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return Value is null ? 0 : EqualityComparer<TValue>.Default.GetHashCode(Value);
+        }
     }
 
     /// <summary> Represents a failed result. </summary>
+    [DebuggerDisplay("{\"Err: \" + Error,nq}")]
     public sealed class Err : Result<TValue, TError>
     {
         /// <summary> The error of the result. </summary>
@@ -37,5 +53,17 @@ partial class Result<TValue, TError>
         /// <typeparam name="TNewValue"> The type of the new value. </typeparam>
         /// <returns> The result with a new value or the existing error. </returns>
         public Result<TNewValue, TError>.Err As<TNewValue>() => new(Error, Metadata);
+
+        /// <inheritdoc />
+        public override bool Equals(Result<TValue, TError>? other)
+        {
+            return other is Err err && EqualityComparer<TError>.Default.Equals(Error, err.Error);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return Error is null ? 0 : EqualityComparer<TError>.Default.GetHashCode(Error);
+        }
     }
 }

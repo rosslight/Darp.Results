@@ -8,8 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 /// <summary> A result which might be in the Success or Error state. Option to attach Metadata as well </summary>
 /// <typeparam name="TValue"> The type of the value. </typeparam>
 /// <typeparam name="TError"> The type of the error. </typeparam>
-[DebuggerDisplay("{IsSuccess ? \"Success: \" + Value : \"Error: \" + Error,nq}")]
-public abstract partial class Result<TValue, TError>
+public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue, TError>>
 {
     internal const string InvalidCaseType = $"Result should either be {nameof(Ok)} or {nameof(Err)}";
 
@@ -35,12 +34,12 @@ public abstract partial class Result<TValue, TError>
     /// <summary> Tries to get the value of the result. </summary>
     /// <param name="value"> The underlying value of the result. </param>
     /// <returns> True if the result is a success, false otherwise. </returns>
-    public bool TryGetValue([NotNullWhen(true)] out TValue? value)
+    public bool TryGetValue([MaybeNullWhen(false)] out TValue value)
     {
         switch (this)
         {
             case Ok ok:
-                value = ok.Value!;
+                value = ok.Value;
                 return true;
             case Err:
                 value = default;
@@ -54,12 +53,12 @@ public abstract partial class Result<TValue, TError>
     /// <param name="value"> The underlying value of the result. </param>
     /// <param name="error"> The error of the result. </param>
     /// <returns> True if the result is a success, false otherwise. </returns>
-    public bool TryGetValue([NotNullWhen(true)] out TValue? value, [NotNullWhen(false)] out Err? error)
+    public bool TryGetValue([MaybeNullWhen(false)] out TValue value, [MaybeNullWhen(true)] out Err error)
     {
         switch (this)
         {
             case Ok ok:
-                value = ok.Value!;
+                value = ok.Value;
                 error = null;
                 return true;
             case Err err:
@@ -77,14 +76,14 @@ public abstract partial class Result<TValue, TError>
     /// <typeparam name="TNewValue"> The type of the new value. </typeparam>
     /// <returns> True if the result is a success, false otherwise. </returns>
     public bool TryGetValue<TNewValue>(
-        [NotNullWhen(true)] out TValue? value,
-        [NotNullWhen(false)] out Result<TNewValue, TError>.Err? error
+        [MaybeNullWhen(false)] out TValue value,
+        [MaybeNullWhen(true)] out Result<TNewValue, TError>.Err error
     )
     {
         switch (this)
         {
             case Ok ok:
-                value = ok.Value!;
+                value = ok.Value;
                 error = null;
                 return true;
             case Err err:
@@ -96,27 +95,27 @@ public abstract partial class Result<TValue, TError>
         }
     }
 
-    public bool TryGetError([NotNullWhen(true)] out TError? error)
+    public bool TryGetError([MaybeNullWhen(false)] out TError error)
     {
         if (this is Err err)
         {
-            error = err.Error!;
+            error = err.Error;
             return true;
         }
         error = default;
         return false;
     }
 
-    public bool TryGetError([NotNullWhen(true)] out TError? error, [NotNullWhen(false)] out Ok? success)
+    public bool TryGetError([MaybeNullWhen(false)] out TError error, [MaybeNullWhen(true)] out Ok success)
     {
         switch (this)
         {
             case Ok ok:
-                error = default!;
+                error = default;
                 success = ok;
                 return false;
             case Err err:
-                error = err.Error!;
+                error = err.Error;
                 success = null;
                 return true;
             default:
@@ -171,5 +170,21 @@ public abstract partial class Result<TValue, TError>
         if (this is not Ok ok)
             yield break;
         yield return ok.Value;
+    }
+
+    /// <summary>
+    /// Indicates whether the current result is equal to another result of the same type.
+    /// </summary>
+    /// <param name="other"></param>
+    /// <returns></returns>
+    public abstract bool Equals(Result<TValue, TError>? other);
+
+    /// <inheritdoc />
+    public abstract override int GetHashCode();
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj)
+    {
+        return obj is Result<TValue, TError> result && Equals(result);
     }
 }
