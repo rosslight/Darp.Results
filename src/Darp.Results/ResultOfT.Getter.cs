@@ -71,6 +71,9 @@ partial class Result<TValue, TError>
         }
     }
 
+    /// <summary> Tries to get the error of the result. </summary>
+    /// <param name="error"> The error of the result. </param>
+    /// <returns> True if the result is a failure, false otherwise. </returns>
     public bool TryGetError([MaybeNullWhen(false)] out TError error)
     {
         if (this is Err err)
@@ -82,6 +85,10 @@ partial class Result<TValue, TError>
         return false;
     }
 
+    /// <summary> Tries to get the error of the result. </summary>
+    /// <param name="error"> The error of the result. </param>
+    /// <param name="success"> The success of the result. </param>
+    /// <returns> True if the result is a failure, false otherwise. </returns>
     public bool TryGetError([MaybeNullWhen(false)] out TError error, [MaybeNullWhen(true)] out Ok success)
     {
         switch (this)
@@ -99,6 +106,11 @@ partial class Result<TValue, TError>
         }
     }
 
+    /// <summary> Tries to get the error of the result. </summary>
+    /// <param name="error"> The error of the result. </param>
+    /// <param name="success"> The success of the result. </param>
+    /// <typeparam name="TNewError"> The type of the new error. </typeparam>
+    /// <returns> True if the result is a failure, false otherwise. </returns>
     public bool TryGetError<TNewError>(
         [MaybeNullWhen(false)] out TError error,
         [MaybeNullWhen(true)] out Result<TValue, TNewError>.Ok success
@@ -127,17 +139,6 @@ partial class Result<TValue, TError>
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     public TValue Unwrap() => Expect("Could not unwrap value. Result is not a success");
 
-    /// <summary> Returns the <see cref="Ok.Value"/> with a custom message. Prefer non-throwing alternatives </summary>
-    /// <returns> The underlying value, if in <see cref="Ok"/> state </returns>
-    /// <exception cref="InvalidOperationException"> An exception, if in <see cref="Err"/> state </exception>
-    /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.expect"/>
-    [Pure]
-    [EditorBrowsable(EditorBrowsableState.Advanced)]
-    public TValue Expect(string message)
-    {
-        return this is not Ok ok ? throw new InvalidOperationException(message) : ok.Value;
-    }
-
     /// <summary> Returns the <see cref="Ok.Value"/> or a default value if the result is an error. </summary>
     /// <param name="defaultValue"> The default value to return if the result is an error. </param>
     /// <returns> The underlying value, if in <see cref="Ok"/> state, or the default value if in <see cref="Err"/> state </returns>
@@ -161,14 +162,21 @@ partial class Result<TValue, TError>
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     public TError UnwrapError() => ExpectError("Could not unwrap error. Result is not a error");
 
+    /// <summary> Returns the <see cref="Ok.Value"/> with a custom message. Prefer non-throwing alternatives </summary>
+    /// <returns> The underlying value, if in <see cref="Ok"/> state </returns>
+    /// <exception cref="InvalidOperationException"> An exception, if in <see cref="Err"/> state </exception>
+    /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.expect"/>
+    [Pure]
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    public TValue Expect(string message) =>
+        TryGetValue(out TValue? value) ? value : throw new InvalidOperationException(message);
+
     /// <summary> Returns the <see cref="Err.Error"/> with a custom message </summary>
     /// <returns> The underlying error, if in <see cref="Err"/> state </returns>
     /// <exception cref="InvalidOperationException"> An exception, if in <see cref="Ok"/> state </exception>
     /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.expect_err"/>
     [Pure]
     [EditorBrowsable(EditorBrowsableState.Advanced)]
-    public TError ExpectError(string message)
-    {
-        return this is not Err err ? throw new InvalidOperationException(message) : err.Error;
-    }
+    public TError ExpectError(string message) =>
+        TryGetError(out TError? error) ? error : throw new InvalidOperationException(message);
 }

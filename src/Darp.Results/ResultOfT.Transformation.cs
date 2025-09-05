@@ -31,22 +31,46 @@ partial class Result<TValue, TError>
             : ok;
     }
 
+    /// <summary>
+    /// Combines two results by returning the result of the first one if it is an error or the second one if it is a success.
+    /// </summary>
+    /// <param name="result"> The result to combine with </param>
+    /// <typeparam name="TNewValue"> The type of the new value </typeparam>
+    /// <returns> The result with a new value or the existing error </returns>
     public Result<TNewValue, TError> And<TNewValue>(Result<TNewValue, TError> result)
     {
         return TryGetValue(out _, out Result<TNewValue, TError>.Err? error) ? result : error;
     }
 
+    /// <summary>
+    /// Combines two results by returning the result of the first one if it is an error or the second one if it is a success.
+    /// </summary>
+    /// <param name="resultProvider"> The function to provide the result to combine with </param>
+    /// <typeparam name="TNewValue"> The type of the new value </typeparam>
+    /// <returns> The result with a new value or the existing error </returns>
     public Result<TNewValue, TError> And<TNewValue>(Func<TValue, Result<TNewValue, TError>> resultProvider)
     {
         ArgumentNullException.ThrowIfNull(resultProvider);
         return TryGetValue(out TValue? value, out Result<TNewValue, TError>.Err? error) ? resultProvider(value) : error;
     }
 
+    /// <summary>
+    /// Combines two results by returning the result of the first one if it is a success or the second one if it is an error.
+    /// </summary>
+    /// <param name="result"> The result to combine with </param>
+    /// <typeparam name="TNewError"> The type of the new error </typeparam>
+    /// <returns> The result with a new error or the existing value </returns>
     public Result<TValue, TNewError> Or<TNewError>(Result<TValue, TNewError> result)
     {
         return TryGetError(out TError? _, out Result<TValue, TNewError>.Ok? ok) ? result : ok;
     }
 
+    /// <summary>
+    /// Combines two results by returning the result of the first one if it is a success or the second one if it is an error.
+    /// </summary>
+    /// <param name="resultProvider"> The function to provide the result to combine with </param>
+    /// <typeparam name="TNewError"> The type of the new error </typeparam>
+    /// <returns> The result with a new error or the existing value </returns>
     public Result<TValue, TNewError> Or<TNewError>(Func<TError, Result<TValue, TNewError>> resultProvider)
     {
         ArgumentNullException.ThrowIfNull(resultProvider);

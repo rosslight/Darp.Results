@@ -26,17 +26,36 @@ public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue,
         Metadata = metadata;
     }
 
+    /// <summary> Indicates whether the result is in the <see cref="Ok"/> state. </summary>
     public bool IsOk => this is Ok;
+
+    /// <summary> Indicates whether the result is in the <see cref="Err"/> state. </summary>
     public bool IsErr => this is Err;
 
+    /// <summary> Implicitly converts a value to a <see cref="Result{TValue, TError}"/> in the <see cref="Ok"/> state. </summary>
+    /// <param name="value"> The value to convert. </param>
+    /// <returns> The result in the <see cref="Ok"/> state. </returns>
     public static implicit operator Result<TValue, TError>(TValue value) => Result.Ok<TValue, TError>(value);
 
+    /// <summary> Implicitly converts an error to a <see cref="Result{TValue, TError}"/> in the <see cref="Err"/> state. </summary>
+    /// <param name="error"> The error to convert. </param>
+    /// <returns> The result in the <see cref="Err"/> state. </returns>
     public static implicit operator Result<TValue, TError>(TError error) => Result.Error<TValue, TError>(error);
 
+    /// <summary>
+    /// Enumerates the values of the result.
+    /// Returns the value if in <see cref="Ok"/> state or an empty enumerator if in <see cref="Err"/> state.
+    /// </summary>
+    /// <returns> The enumerator of the result. </returns>
     /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.iter"/>
     [Pure]
     public IEnumerator<TValue> GetEnumerator() => AsEnumerable().GetEnumerator();
 
+    /// <summary>
+    /// Enumerates the values of the result.
+    /// Returns the value if in <see cref="Ok"/> state or an empty enumerable if in <see cref="Err"/> state.
+    /// </summary>
+    /// <returns> The enumerable of the result. </returns>
     /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.iter"/>
     [Pure]
     public IEnumerable<TValue> AsEnumerable()
@@ -46,11 +65,9 @@ public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue,
         yield return ok.Value;
     }
 
-    /// <summary>
-    /// Indicates whether the current result is equal to another result of the same type.
-    /// </summary>
-    /// <param name="other"></param>
-    /// <returns></returns>
+    /// <summary> Indicates whether the current result is equal to another result of the same type. </summary>
+    /// <param name="other"> The other result to compare to. </param>
+    /// <returns> True if the results are equal, false otherwise. </returns>
     public abstract bool Equals(Result<TValue, TError>? other);
 
     /// <inheritdoc />
@@ -63,6 +80,7 @@ public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue,
     }
 
     /// <summary> Represents a successful result. </summary>
+    /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#variant.Ok"/>
     [DebuggerDisplay("{\"Ok: \" + Value,nq}")]
     public sealed class Ok : Result<TValue, TError>
     {
@@ -103,6 +121,7 @@ public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue,
     }
 
     /// <summary> Represents a failed result. </summary>
+    /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#variant.Err"/>
     [DebuggerDisplay("{\"Err: \" + Error,nq}")]
     public sealed class Err : Result<TValue, TError>
     {
