@@ -81,7 +81,13 @@ public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue,
         /// <summary> Converts the result to a new error type. </summary>
         /// <typeparam name="TNewError"> The type of the new error. </typeparam>
         /// <returns> The result with a new error or the existing value. </returns>
-        public Result<TValue, TNewError>.Ok As<TNewError>() => new(Value, Metadata);
+        public Result<TValue, TNewError>.Ok As<TNewError>()
+        {
+            // Do not allocate a new ok if the TNewError == TError
+            if (this is Result<TValue, TNewError>.Ok ok)
+                return ok;
+            return new Result<TValue, TNewError>.Ok(Value, Metadata);
+        }
 
         /// <inheritdoc />
         public override bool Equals(Result<TValue, TError>? other)
@@ -115,7 +121,13 @@ public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue,
         /// <summary> Converts the result to a new value type. </summary>
         /// <typeparam name="TNewValue"> The type of the new value. </typeparam>
         /// <returns> The result with a new value or the existing error. </returns>
-        public Result<TNewValue, TError>.Err As<TNewValue>() => new(Error, Metadata);
+        public Result<TNewValue, TError>.Err As<TNewValue>()
+        {
+            // Do not allocate a new error if the TNewValue == TValue
+            if (this is Result<TNewValue, TError>.Err err)
+                return err;
+            return new Result<TNewValue, TError>.Err(Error, Metadata);
+        }
 
         /// <inheritdoc />
         public override bool Equals(Result<TValue, TError>? other)

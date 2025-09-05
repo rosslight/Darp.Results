@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace Darp.Results;
 
 partial class Result<TValue, TError>
@@ -38,27 +36,15 @@ partial class Result<TValue, TError>
         return TryGetValue(out _, out Result<TNewValue, TError>.Err? error) ? result : error;
     }
 
-    public Result<TValue, TError> And(Func<TValue, Result<TValue, TError>> resultProvider)
-    {
-        ArgumentNullException.ThrowIfNull(resultProvider);
-        return TryGetValue(out TValue? value, out Err? error) ? resultProvider(value) : error;
-    }
-
     public Result<TNewValue, TError> And<TNewValue>(Func<TValue, Result<TNewValue, TError>> resultProvider)
     {
         ArgumentNullException.ThrowIfNull(resultProvider);
         return TryGetValue(out TValue? value, out Result<TNewValue, TError>.Err? error) ? resultProvider(value) : error;
     }
 
-    public Result<TValue, TError> Or(Result<TValue, TError> result)
+    public Result<TValue, TNewError> Or<TNewError>(Result<TValue, TNewError> result)
     {
-        return IsOk ? this : result;
-    }
-
-    public Result<TValue, TError> Or(Func<TError, Result<TValue, TError>> resultProvider)
-    {
-        ArgumentNullException.ThrowIfNull(resultProvider);
-        return TryGetError(out TError? error) ? resultProvider(error) : this;
+        return TryGetError(out TError? _, out Result<TValue, TNewError>.Ok? ok) ? result : ok;
     }
 
     public Result<TValue, TNewError> Or<TNewError>(Func<TError, Result<TValue, TNewError>> resultProvider)
