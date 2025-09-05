@@ -1,9 +1,7 @@
-﻿using System.Diagnostics.Contracts;
+﻿using System.Diagnostics;
+using System.Diagnostics.Contracts;
 
 namespace Darp.Results;
-
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 
 /// <summary> A result which might be in the Success or Error state. Option to attach Metadata as well </summary>
 /// <typeparam name="TValue"> The type of the value. </typeparam>
@@ -30,130 +28,6 @@ public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue,
 
     public bool IsOk => this is Ok;
     public bool IsErr => this is Err;
-
-    /// <summary> Tries to get the value of the result. </summary>
-    /// <param name="value"> The underlying value of the result. </param>
-    /// <returns> True if the result is a success, false otherwise. </returns>
-    public bool TryGetValue([MaybeNullWhen(false)] out TValue value)
-    {
-        switch (this)
-        {
-            case Ok ok:
-                value = ok.Value;
-                return true;
-            case Err:
-                value = default;
-                return false;
-            default:
-                throw new UnreachableException(InvalidCaseType);
-        }
-    }
-
-    /// <summary> Tries to get the value of the result or the error. </summary>
-    /// <param name="value"> The underlying value of the result. </param>
-    /// <param name="error"> The error of the result. </param>
-    /// <returns> True if the result is a success, false otherwise. </returns>
-    public bool TryGetValue([MaybeNullWhen(false)] out TValue value, [MaybeNullWhen(true)] out Err error)
-    {
-        switch (this)
-        {
-            case Ok ok:
-                value = ok.Value;
-                error = null;
-                return true;
-            case Err err:
-                value = default;
-                error = err;
-                return false;
-            default:
-                throw new UnreachableException(InvalidCaseType);
-        }
-    }
-
-    /// <summary> Tries to get the value of the result or the error. A new type can be provided to allow conversion to a different type. </summary>
-    /// <param name="value"> The underlying value of the result. </param>
-    /// <param name="error"> The error of the result. </param>
-    /// <typeparam name="TNewValue"> The type of the new value. </typeparam>
-    /// <returns> True if the result is a success, false otherwise. </returns>
-    public bool TryGetValue<TNewValue>(
-        [MaybeNullWhen(false)] out TValue value,
-        [MaybeNullWhen(true)] out Result<TNewValue, TError>.Err error
-    )
-    {
-        switch (this)
-        {
-            case Ok ok:
-                value = ok.Value;
-                error = null;
-                return true;
-            case Err err:
-                value = default;
-                error = err.As<TNewValue>();
-                return false;
-            default:
-                throw new UnreachableException(InvalidCaseType);
-        }
-    }
-
-    public bool TryGetError([MaybeNullWhen(false)] out TError error)
-    {
-        if (this is Err err)
-        {
-            error = err.Error;
-            return true;
-        }
-        error = default;
-        return false;
-    }
-
-    public bool TryGetError([MaybeNullWhen(false)] out TError error, [MaybeNullWhen(true)] out Ok success)
-    {
-        switch (this)
-        {
-            case Ok ok:
-                error = default;
-                success = ok;
-                return false;
-            case Err err:
-                error = err.Error;
-                success = null;
-                return true;
-            default:
-                throw new UnreachableException(InvalidCaseType);
-        }
-    }
-
-    /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap"/>
-    [Pure]
-    public TValue Unwrap() =>
-        TryGetValue(out TValue? value)
-            ? value
-            : throw new InvalidOperationException("Could not unwrap value. Result is not a success");
-
-    /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap_err"/>
-    [Pure]
-    public TError UnwrapError() =>
-        TryGetError(out TError? error)
-            ? error
-            : throw new InvalidOperationException("Could not unwrap error. Result is not a error");
-
-    /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.expect"/>
-    [Pure]
-    public TValue Expect(string message)
-    {
-        if (this is not Ok ok)
-            throw new InvalidOperationException(message);
-        return ok.Value;
-    }
-
-    /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.expect_err"/>
-    [Pure]
-    public TError ExpectError(string message)
-    {
-        if (this is not Err err)
-            throw new InvalidOperationException(message);
-        return err.Error;
-    }
 
     public static implicit operator Result<TValue, TError>(TValue value) => Result.Ok<TValue, TError>(value);
 
@@ -186,5 +60,73 @@ public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue,
     public override bool Equals(object? obj)
     {
         return obj is Result<TValue, TError> result && Equals(result);
+    }
+
+    /// <summary> Represents a successful result. </summary>
+    [DebuggerDisplay("{\"Ok: \" + Value,nq}")]
+    public sealed class Ok : Result<TValue, TError>
+    {
+        /// <summary> The value of the result. </summary>
+        public TValue Value { get; }
+
+        /// <summary> Initializes a new instance of the <see cref="Result{TValue,TError}.Ok"/> class. </summary>
+        /// <param name="value"> The value of the result. </param>
+        /// <param name="metadata"> The metadata of the result. </param>
+        internal Ok(TValue value, IReadOnlyDictionary<string, object> metadata)
+            : base(metadata)
+        {
+            Value = value;
+        }
+
+        /// <summary> Converts the result to a new error type. </summary>
+        /// <typeparam name="TNewError"> The type of the new error. </typeparam>
+        /// <returns> The result with a new error or the existing value. </returns>
+        public Result<TValue, TNewError>.Ok As<TNewError>() => new(Value, Metadata);
+
+        /// <inheritdoc />
+        public override bool Equals(Result<TValue, TError>? other)
+        {
+            return other is Ok ok && EqualityComparer<TValue>.Default.Equals(Value, ok.Value);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return Value is null ? 0 : EqualityComparer<TValue>.Default.GetHashCode(Value);
+        }
+    }
+
+    /// <summary> Represents a failed result. </summary>
+    [DebuggerDisplay("{\"Err: \" + Error,nq}")]
+    public sealed class Err : Result<TValue, TError>
+    {
+        /// <summary> The error of the result. </summary>
+        public TError Error { get; }
+
+        /// <summary> Initializes a new instance of the <see cref="Result{TValue,TError}.Err"/> class. </summary>
+        /// <param name="error"> The error of the result. </param>
+        /// <param name="metadata"> The metadata of the result. </param>
+        internal Err(TError error, IReadOnlyDictionary<string, object> metadata)
+            : base(metadata)
+        {
+            Error = error;
+        }
+
+        /// <summary> Converts the result to a new value type. </summary>
+        /// <typeparam name="TNewValue"> The type of the new value. </typeparam>
+        /// <returns> The result with a new value or the existing error. </returns>
+        public Result<TNewValue, TError>.Err As<TNewValue>() => new(Error, Metadata);
+
+        /// <inheritdoc />
+        public override bool Equals(Result<TValue, TError>? other)
+        {
+            return other is Err err && EqualityComparer<TError>.Default.Equals(Error, err.Error);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return Error is null ? 0 : EqualityComparer<TError>.Default.GetHashCode(Error);
+        }
     }
 }

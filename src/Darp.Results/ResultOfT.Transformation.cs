@@ -14,26 +14,9 @@ partial class Result<TValue, TError>
     public Result<TNewValue, TError> Map<TNewValue>(Func<TValue, TNewValue> func)
     {
         ArgumentNullException.ThrowIfNull(func);
-        return this switch
-        {
-            Ok ok => new Result<TNewValue, TError>.Ok(func(ok.Value), Metadata),
-            Err err => new Result<TNewValue, TError>.Err(err.Error, Metadata),
-            _ => throw new UnreachableException(InvalidCaseType),
-        };
-    }
-
-    /// <summary>
-    /// Returns the provided <paramref name="defaultValue"/> (if Error), or applies the <paramref name="func"/> to the contained value (if Ok).
-    /// </summary>
-    /// <param name="func"> The function to transform the value </param>
-    /// <param name="defaultValue"> The default value if the result has an error </param>
-    /// <typeparam name="TNewValue"> The type of the new value </typeparam>
-    /// <returns> The mapped value or default </returns>
-    /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.map_or"/>
-    public TNewValue MapOr<TNewValue>(Func<TValue, TNewValue> func, TNewValue defaultValue)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-        return TryGetValue(out TValue? value) ? func(value) : defaultValue;
+        return TryGetValue(out TValue? value, out Result<TNewValue, TError>.Err? err)
+            ? new Result<TNewValue, TError>.Ok(func(value), Metadata)
+            : err;
     }
 
     /// <summary>
@@ -45,12 +28,9 @@ partial class Result<TValue, TError>
     public Result<TValue, TNewError> MapError<TNewError>(Func<TError, TNewError> func)
     {
         ArgumentNullException.ThrowIfNull(func);
-        return this switch
-        {
-            Ok ok => new Result<TValue, TNewError>.Ok(ok.Value, Metadata),
-            Err err => new Result<TValue, TNewError>.Err(func(err.Error), Metadata),
-            _ => throw new UnreachableException(InvalidCaseType),
-        };
+        return TryGetError(out TError? error, out Result<TValue, TNewError>.Ok? ok)
+            ? new Result<TValue, TNewError>.Err(func(error), Metadata)
+            : ok;
     }
 
     public Result<TNewValue, TError> And<TNewValue>(Result<TNewValue, TError> result)
@@ -58,9 +38,16 @@ partial class Result<TValue, TError>
         return TryGetValue(out _, out Result<TNewValue, TError>.Err? error) ? result : error;
     }
 
-    public Result<TNewValue, TError> And<TNewValue>(Func<Result<TNewValue, TError>> lazyResult)
+    public Result<TValue, TError> And(Func<TValue, Result<TValue, TError>> resultProvider)
     {
-        return TryGetValue(out _, out Result<TNewValue, TError>.Err? error) ? lazyResult() : error;
+        ArgumentNullException.ThrowIfNull(resultProvider);
+        return TryGetValue(out TValue? value, out Err? error) ? resultProvider(value) : error;
+    }
+
+    public Result<TNewValue, TError> And<TNewValue>(Func<TValue, Result<TNewValue, TError>> resultProvider)
+    {
+        ArgumentNullException.ThrowIfNull(resultProvider);
+        return TryGetValue(out TValue? value, out Result<TNewValue, TError>.Err? error) ? resultProvider(value) : error;
     }
 
     public Result<TValue, TError> Or(Result<TValue, TError> result)
@@ -68,8 +55,15 @@ partial class Result<TValue, TError>
         return IsOk ? this : result;
     }
 
-    public Result<TValue, TError> Or(Func<Result<TValue, TError>> lazyResult)
+    public Result<TValue, TError> Or(Func<TError, Result<TValue, TError>> resultProvider)
     {
-        return IsOk ? this : lazyResult();
+        ArgumentNullException.ThrowIfNull(resultProvider);
+        return TryGetError(out TError? error) ? resultProvider(error) : this;
+    }
+
+    public Result<TValue, TNewError> Or<TNewError>(Func<TError, Result<TValue, TNewError>> resultProvider)
+    {
+        ArgumentNullException.ThrowIfNull(resultProvider);
+        return TryGetError(out TError? error, out Result<TValue, TNewError>.Ok? ok) ? resultProvider(error) : ok;
     }
 }

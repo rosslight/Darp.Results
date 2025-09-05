@@ -11,7 +11,7 @@ public sealed class ResultRetrievalTests
 
         Result<int, Error> result = value;
 
-        var isOk = result.TryGetValue(out var retrievedValue);
+        bool isOk = result.TryGetValue(out int retrievedValue);
         isOk.ShouldBeTrue();
         retrievedValue.ShouldBe(value);
     }
@@ -23,7 +23,7 @@ public sealed class ResultRetrievalTests
 
         Result<int, Error> result = error;
 
-        var isOk = result.TryGetValue(out var retrievedValue);
+        bool isOk = result.TryGetValue(out int retrievedValue);
         isOk.ShouldBeFalse();
         retrievedValue.ShouldBe(0);
     }
@@ -35,7 +35,7 @@ public sealed class ResultRetrievalTests
 
         Result<int, Error> result = value;
 
-        var isError = result.TryGetError(out var retrievedError);
+        bool isError = result.TryGetError(out Error retrievedError);
         isError.ShouldBeFalse();
         retrievedError.ShouldBe(default);
     }
@@ -47,7 +47,7 @@ public sealed class ResultRetrievalTests
 
         Result<int, Error> result = error;
 
-        var isError = result.TryGetError(out var retrievedError);
+        bool isError = result.TryGetError(out Error retrievedError);
         isError.ShouldBeTrue();
         retrievedError.ShouldBe(error);
     }
@@ -95,8 +95,9 @@ public sealed class ResultRetrievalTests
         Result<int, string> r = Result.Try(() => 1).MapError(e => e.Message);
         var result = Result.From<string, int>("42", int.TryParse);
 
+        Result<Func<int>, string> re = null!;
         // Should error
-        _ = result.Unwrap();
+        _ = re.Unwrap(() => 123);
 
         // Warning
         Result.From<string, int>("42", int.TryParse); // Result not checked
