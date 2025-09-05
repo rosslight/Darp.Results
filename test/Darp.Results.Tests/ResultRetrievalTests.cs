@@ -85,12 +85,12 @@ public sealed class ResultRetrievalTests
             return r;
         return r switch
         {
-            Result<int, StandardError>.Ok ok => ok.Value,
-            Result<int, StandardError>.Err err => err.Error,
+            Result<int, StandardError>.Ok(var value) => value,
+            Result<int, StandardError>.Err(var error) => error,
         };
     }
 
-    public Result<string, StandardError> X()
+    public async Task<Result<string, StandardError>> X()
     {
         Result<int, string> r = Result.Try(() => 1).MapError(e => e.Message);
         var result = Result.From<string, int>("42", int.TryParse);
@@ -101,14 +101,15 @@ public sealed class ResultRetrievalTests
 
         // Warning
         Result.From<string, int>("42", int.TryParse); // Result not checked
+        await Task.Run(() => Result.From<string, int>("42", int.TryParse)); // Result not checked
         // Should info
         //if (result.IsError)
         //    return result.Error; // Loses optional metadata, replace with if (result.TryGetError(out Result<string, Error> resultWithError)) return resultWithError;
         Result<Result<int, string>, string> rr = null!;
         return Result.From<string, int>("42", int.TryParse) switch
         {
-            Result<int, StandardError>.Ok => throw new System.NotImplementedException(),
-            Result<int, StandardError>.Err => throw new System.NotImplementedException(),
+            Result<int, StandardError>.Ok(var ok) => throw new System.NotImplementedException(),
+            Result<int, StandardError>.Err(var err) => throw new System.NotImplementedException(),
         };
     }
 }

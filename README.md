@@ -34,10 +34,11 @@ Result<int, string> implicitFailure = "error";
 if (result.TryGetValue(out int value)) { /* use value */ }
 if (result.TryGetError(out string error)) { /* handle error */ }
 
+// Switch on result
 return result switch 
 {
-    Result<int, string>.Ok ok => ok.Value,
-    Result<int, string>.Err err => err.Error,
+    Result<int, string>.Ok(var value) => value,
+    Result<int, string>.Err(var error) => error,
 }
 ```
 
@@ -216,8 +217,8 @@ public Result<string, StandardError> SwitchOnResult(Result<int, StandardError> r
 {
     return result switch
     {
-        Result<int, StandardError>.Ok ok => ok.Value.ToString(),
-        Result<int, StandardError>.Err err => err.Error,
+        Result<int, StandardError>.Ok(var value, var metadata) => value.ToString(),
+        Result<int, StandardError>.Err(var error, var metadata) => error,
     };
 }
 ```

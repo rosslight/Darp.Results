@@ -16,8 +16,8 @@ partial class Result<TValue, TError>
         );
         return this switch
         {
-            Ok ok => new Ok(ok.Value, newMetadata),
-            Err err => new Err(err.Error, newMetadata),
+            Ok(var v) => new Ok(v, newMetadata),
+            Err(var error) => new Err(error, newMetadata),
             _ => throw new UnreachableException(),
         };
     }
@@ -30,8 +30,8 @@ partial class Result<TValue, TError>
         var newMetadata = new ReadOnlyDictionary<string, object>(Metadata.Concat(metadata).ToDictionary());
         return this switch
         {
-            Ok ok => new Ok(ok.Value, newMetadata),
-            Err err => new Err(err.Error, newMetadata),
+            Ok(var v) => new Ok(v, newMetadata),
+            Err(var error) => new Err(error, newMetadata),
             _ => throw new UnreachableException(),
         };
     }

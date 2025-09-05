@@ -8,7 +8,7 @@ namespace Darp.Results;
 /// <typeparam name="TError"> The type of the error. </typeparam>
 public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue, TError>>
 {
-    internal const string InvalidCaseType = $"Result should either be {nameof(Ok)} or {nameof(Err)}";
+    private const string InvalidCaseType = $"Result should either be {nameof(Ok)} or {nameof(Err)}";
 
     /// <summary> The optional metadata </summary>
     public IReadOnlyDictionary<string, object> Metadata { get; }
@@ -118,6 +118,19 @@ public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue,
         {
             return Value is null ? 0 : EqualityComparer<TValue>.Default.GetHashCode(Value);
         }
+
+        /// <summary> Deconstructs the result into the underlying value </summary>
+        /// <param name="value"> The value of the <see cref="Result{TValue,TError}.Ok"/> result </param>
+        public void Deconstruct(out TValue value) => value = Value;
+
+        /// <summary> Deconstructs the result into the underlying value </summary>
+        /// <param name="value"> The value of the <see cref="Result{TValue,TError}.Ok"/> result </param>
+        /// <param name="metadata"> The metadata of the result </param>
+        public void Deconstruct(out TValue value, out IReadOnlyDictionary<string, object> metadata)
+        {
+            value = Value;
+            metadata = Metadata;
+        }
     }
 
     /// <summary> Represents a failed result. </summary>
@@ -158,6 +171,19 @@ public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue,
         public override int GetHashCode()
         {
             return Error is null ? 0 : EqualityComparer<TError>.Default.GetHashCode(Error);
+        }
+
+        /// <summary> Deconstructs the result into the underlying error </summary>
+        /// <param name="error"> The value of the <see cref="Result{TValue,TError}.Err"/> result </param>
+        public void Deconstruct(out TError error) => error = Error;
+
+        /// <summary> Deconstructs the result into the underlying error </summary>
+        /// <param name="error"> The value of the <see cref="Result{TValue,TError}.Err"/> result </param>
+        /// <param name="metadata"> The metadata of the result </param>
+        public void Deconstruct(out TError error, out IReadOnlyDictionary<string, object> metadata)
+        {
+            error = Error;
+            metadata = Metadata;
         }
     }
 }

@@ -53,7 +53,6 @@ public static class Result
 
     /// <summary> Tries to parse the input using the given function. </summary>
     /// <param name="input"> The input to parse. </param>
-    /// <param name="tryParse"> The function to parse the input. </param>
     /// <typeparam name="TIn"> The type of the input. </typeparam>
     /// <typeparam name="TOut"> The type of the output. </typeparam>
     /// <returns> The parsed result. </returns>
