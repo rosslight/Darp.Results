@@ -25,7 +25,7 @@ Existing projects did not fit all the requirements. However, these projects were
 
 - **Darp.Results** - Core Result type implementation
 - **Darp.Results.Analyzers** - Roslyn analyzers for Result usage patterns. For documentation see [here](src/Darp.Results.Analyzers/README.md)
-- **Darp.Results.Shouldy** - Shouldly extensions for Result testing
+- **Darp.Results.Shouldly** - Shouldly extensions for Result testing
 
 ## Quick Start
 
@@ -167,7 +167,7 @@ IReadOnlyDictionary<string, object> Metadata { get; }
 ## Testing with Shouldly
 
 ```csharp
-using Darp.Results.Shouldy;
+using Darp.Results.Shouldly;
 
 // Assert success
 result.ShouldBeSuccess();

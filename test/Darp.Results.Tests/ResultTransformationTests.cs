@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Darp.Results.Shouldy;
+using Darp.Results.Shouldly;
 using Shouldly;
 
 namespace Darp.Results.Tests;

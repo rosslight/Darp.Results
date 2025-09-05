@@ -1,6 +1,6 @@
 ﻿using Shouldly;
 
-namespace Darp.Results.Shouldy;
+namespace Darp.Results.Shouldly;
 
 public static class ShouldlyResultExtensions
 {

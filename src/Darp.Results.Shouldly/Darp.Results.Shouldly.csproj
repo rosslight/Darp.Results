@@ -4,7 +4,8 @@
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>A set of extension methods to simplify testing Darp.Results.Result.</Description>
-    <PackageTags>Darp;Rosslight;Result;Shouldy</PackageTags>
+    <PackageTags>Darp;Rosslight;Result;Shouldly</PackageTags>
+    <RootNamespace>Darp.Results.Shouldly</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Darp.Results\Darp.Results.csproj" />

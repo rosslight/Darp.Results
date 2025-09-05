@@ -1,4 +1,4 @@
-using Darp.Results.Shouldy;
+using Darp.Results.Shouldly;
 
 namespace Darp.Results.Tests;
 
