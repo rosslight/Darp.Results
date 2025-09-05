@@ -5,6 +5,7 @@ public enum StandardError
 {
     /// <summary> The try pattern failed. </summary>
     TryPatternFailed,
+
     /// <summary> An exception occurred. </summary>
     ExceptionOccured,
 }

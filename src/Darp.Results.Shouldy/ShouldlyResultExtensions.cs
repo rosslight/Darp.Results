@@ -5,6 +5,11 @@ namespace Darp.Results.Shouldy;
 public static class ShouldlyResultExtensions
 {
     /// <summary>Asserts Success; on failure includes the error string.</summary>
+    /// <param name="result"> The result to assert. </param>
+    /// <param name="customMessage"> The custom message to include in the assertion. </param>
+    /// <typeparam name="TValue"> The type of the value. </typeparam>
+    /// <typeparam name="TError"> The type of the error. </typeparam>
+    /// <returns> The value of the result. </returns>
     public static TValue ShouldBeSuccess<TValue, TError>(
         this Result<TValue, TError> result,
         string? customMessage = null
@@ -20,6 +25,12 @@ public static class ShouldlyResultExtensions
     }
 
     /// <summary>Asserts Success and the Value equals expected; on failure includes the error string.</summary>
+    /// <param name="result"> The result to assert. </param>
+    /// <param name="expected"> The expected value. </param>
+    /// <param name="customMessage"> The custom message to include in the assertion. </param>
+    /// <typeparam name="TValue"> The type of the value. </typeparam>
+    /// <typeparam name="TError"> The type of the error. </typeparam>
+    /// <returns> The value of the result. </returns>
     public static TValue ShouldHaveValue<TValue, TError>(
         this Result<TValue, TError> result,
         TValue expected,
@@ -32,6 +43,12 @@ public static class ShouldlyResultExtensions
     }
 
     /// <summary>Asserts Success, then runs additional checks on Value; on failure includes the error string.</summary>
+    /// <param name="result"> The result to assert. </param>
+    /// <param name="assertions"> The assertions to run on the value. </param>
+    /// <param name="customMessage"> The custom message to include in the assertion. </param>
+    /// <typeparam name="TValue"> The type of the value. </typeparam>
+    /// <typeparam name="TError"> The type of the error. </typeparam>
+    /// <returns> The value of the result. </returns>
     public static TValue ShouldHaveValue<TValue, TError>(
         this Result<TValue, TError> result,
         Action<TValue> assertions,
@@ -45,6 +62,11 @@ public static class ShouldlyResultExtensions
     }
 
     /// <summary>Asserts Error; if it was Success, includes the value string.</summary>
+    /// <param name="result"> The result to assert. </param>
+    /// <param name="customMessage"> The custom message to include in the assertion. </param>
+    /// <typeparam name="TValue"> The type of the value. </typeparam>
+    /// <typeparam name="TError"> The type of the error. </typeparam>
+    /// <returns> The error of the result. </returns>
     public static TError ShouldBeError<TValue, TError>(this Result<TValue, TError> result, string? customMessage = null)
     {
         result.ShouldNotBeNull(customMessage ?? "Result should not be null.");
@@ -58,6 +80,12 @@ public static class ShouldlyResultExtensions
     }
 
     /// <summary>Asserts Error equals expected; if it was Success, includes the value string.</summary>
+    /// <param name="result"> The result to assert. </param>
+    /// <param name="expected"> The expected error. </param>
+    /// <param name="customMessage"> The custom message to include in the assertion. </param>
+    /// <typeparam name="TValue"> The type of the value. </typeparam>
+    /// <typeparam name="TError"> The type of the error. </typeparam>
+    /// <returns> The error of the result. </returns>
     public static TError ShouldHaveError<TValue, TError>(
         this Result<TValue, TError> result,
         TError expected,
@@ -70,6 +98,12 @@ public static class ShouldlyResultExtensions
     }
 
     /// <summary>Asserts Error, then runs additional checks on Error; if it was Success, includes the value string.</summary>
+    /// <param name="result"> The result to assert. </param>
+    /// <param name="assertions"> The assertions to run on the error. </param>
+    /// <param name="customMessage"> The custom message to include in the assertion. </param>
+    /// <typeparam name="TValue"> The type of the value. </typeparam>
+    /// <typeparam name="TError"> The type of the error. </typeparam>
+    /// <returns> The error of the result. </returns>
     public static TError ShouldHaveError<TValue, TError>(
         this Result<TValue, TError> result,
         Action<TError> assertions,

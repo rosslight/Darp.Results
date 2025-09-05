@@ -7,14 +7,24 @@ A Result type implementation for C# that provides a safe way to handle operation
 - Get values through switching
 - API heavily inspired by Rust's [Result<T, E>](https://doc.rust-lang.org/std/result/enum.Result.html)
 - Ability to attach metadata to results
+- Immutability
+- Any object should be a possible error type (e.g., enums)
 - Analyzers/CodeFixers
 - Designed to benefit from the [discriminated unions proposal](https://github.com/dotnet/csharplang/tree/main/meetings/working-groups/discriminated-unions)
+
+Existing projects did not fit all the requirements. However, these projects were an inspiration:
+
+- [FluentResults](https://github.com/altmann/FluentResults)
+- [LightResults](https://github.com/jscarle/LightResults)
+- [error-or](https://github.com/amantinband/error-or)
+- [DotNext Result](https://dotnet.github.io/dotNext/features/core/result.html)
+- [CSharpFunctionalExtensions](https://github.com/vkhorikov/CSharpFunctionalExtensions)
+- [language-ext](https://github.com/louthy/language-ext/wiki/How-to-handle-errors-in-a-functional-way)
 
 ## Packages
 
 - **Darp.Results** - Core Result type implementation
-- **Darp.Results.Analyzers** - Roslyn analyzers for Result usage patterns
-- **Darp.Results.CodeFixers** - Code fixers for common Result issues
+- **Darp.Results.Analyzers** - Roslyn analyzers for Result usage patterns. For documentation see [here](src/Darp.Results.Analyzers/README.md)
 - **Darp.Results.Shouldy** - Shouldly extensions for Result testing
 
 ## Quick Start

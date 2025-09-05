@@ -35,12 +35,16 @@ public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue,
     /// <summary> Implicitly converts a value to a <see cref="Result{TValue, TError}"/> in the <see cref="Ok"/> state. </summary>
     /// <param name="value"> The value to convert. </param>
     /// <returns> The result in the <see cref="Ok"/> state. </returns>
+#pragma warning disable CA2225 // Alternative provided in Result class
     public static implicit operator Result<TValue, TError>(TValue value) => Result.Ok<TValue, TError>(value);
+#pragma warning restore CA2225
 
     /// <summary> Implicitly converts an error to a <see cref="Result{TValue, TError}"/> in the <see cref="Err"/> state. </summary>
     /// <param name="error"> The error to convert. </param>
     /// <returns> The result in the <see cref="Err"/> state. </returns>
+#pragma warning disable CA2225 // Alternative provided in Result class
     public static implicit operator Result<TValue, TError>(TError error) => Result.Error<TValue, TError>(error);
+#pragma warning restore CA2225
 
     /// <summary>
     /// Enumerates the values of the result.

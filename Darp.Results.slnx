@@ -4,6 +4,7 @@
     <Project Path="src/Darp.Results.Shouldy/Darp.Results.Shouldy.csproj" />
     <Project Path="src/Darp.Results/Darp.Results.csproj" />
     <Project Path="src\Darp.Results.CodeFixers\Darp.Results.CodeFixers.csproj" Type="Classic C#" />
+    <File Path="src\Directory.Build.props" />
   </Folder>
   <Folder Name="/test/">
     <Project Path="test/Darp.Results.Analyzers.Tests/Darp.Results.Analyzers.Tests.csproj" />

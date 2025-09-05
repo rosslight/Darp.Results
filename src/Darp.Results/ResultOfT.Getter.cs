@@ -151,8 +151,11 @@ partial class Result<TValue, TError>
     /// <returns> The underlying value, if in <see cref="Ok"/> state, or the default value if in <see cref="Err"/> state </returns>
     /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap_or_else"/>
     [Pure]
-    public TValue Unwrap(Func<TError, TValue> valueProvider) =>
-        TryGetValue(out TValue? value, out Err? err) ? value : valueProvider(err.Error);
+    public TValue Unwrap(Func<TError, TValue> valueProvider)
+    {
+        ArgumentNullException.ThrowIfNull(valueProvider);
+        return TryGetValue(out TValue? value, out Err? err) ? value : valueProvider(err.Error);
+    }
 
     /// <summary> Returns the <see cref="Err.Error"/> </summary>
     /// <returns> The underlying error, if in <see cref="Err"/> state </returns>

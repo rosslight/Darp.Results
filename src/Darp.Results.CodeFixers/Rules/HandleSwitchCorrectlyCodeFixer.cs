@@ -73,7 +73,7 @@ public sealed class HandleSwitchCorrectlyCodeFixer : CodeFixProvider
         );
 
         // Calculate position to insert at
-        SemanticModel? model = await document.GetSemanticModelAsync(cancellationToken);
+        SemanticModel? model = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
         if (model is null)
             return document;
 
@@ -99,7 +99,8 @@ public sealed class HandleSwitchCorrectlyCodeFixer : CodeFixProvider
                 return true;
             if (syntax.Pattern is not DeclarationPatternSyntax declarationPatternSyntax)
                 return false;
-            var declarationType = model.GetSymbolInfo(declarationPatternSyntax.Type).Symbol as ITypeSymbol;
+            var declarationType =
+                model.GetSymbolInfo(declarationPatternSyntax.Type, cancellationToken).Symbol as ITypeSymbol;
             return declarationType?.BaseType.IsOrExtendsResult() is true
                 && declarationType.IsErrorResult(declarationType.BaseType);
         }

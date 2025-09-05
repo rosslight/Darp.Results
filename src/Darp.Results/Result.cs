@@ -11,7 +11,10 @@ public static class Result
     /// <typeparam name="TValue"> The type of the value. </typeparam>
     /// <typeparam name="TError"> The type of the error. </typeparam>
     /// <returns> The result with the given value and metadata. </returns>
-    public static Result<TValue, TError> Ok<TValue, TError>(TValue value, IDictionary<string, object>? metadata = null)
+    public static Result<TValue, TError>.Ok Ok<TValue, TError>(
+        TValue value,
+        IDictionary<string, object>? metadata = null
+    )
     {
         return new Result<TValue, TError>.Ok(
             value,
@@ -27,7 +30,7 @@ public static class Result
     /// <typeparam name="TValue"> The type of the value. </typeparam>
     /// <typeparam name="TError"> The type of the error. </typeparam>
     /// <returns> The result with the given error and metadata. </returns>
-    public static Result<TValue, TError> Error<TValue, TError>(
+    public static Result<TValue, TError>.Err Error<TValue, TError>(
         TError error,
         IDictionary<string, object>? metadata = null
     )
@@ -53,6 +56,7 @@ public static class Result
 
     /// <summary> Tries to parse the input using the given function. </summary>
     /// <param name="input"> The input to parse. </param>
+    /// <param name="output"> The output of the parse operation. </param>
     /// <typeparam name="TIn"> The type of the input. </typeparam>
     /// <typeparam name="TOut"> The type of the output. </typeparam>
     /// <returns> The parsed result. </returns>
@@ -66,6 +70,7 @@ public static class Result
     /// <returns> The parsed result. </returns>
     public static Result<TOut, StandardError> From<TIn, TOut>(TIn input, TryParseFunc<TIn, TOut> tryParse)
     {
+        ArgumentNullException.ThrowIfNull(tryParse);
         try
         {
             if (tryParse(input, out TOut output))
@@ -84,6 +89,7 @@ public static class Result
     /// <returns> The result of the function. </returns>
     public static Result<TValue, Exception> Try<TValue>(Func<TValue> func)
     {
+        ArgumentNullException.ThrowIfNull(func);
         try
         {
             return func();

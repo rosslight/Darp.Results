@@ -1,0 +1,17 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <PropertyGroup>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+    <IsPackable>true</IsPackable>
+    <Authors>rosslight GmbH</Authors>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/rosslight/Darp.Results.git</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">True</ContinuousIntegrationBuild>
+    <NoWarn>CA1031;CA1034</NoWarn>
+  </PropertyGroup>
+</Project>
