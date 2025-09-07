@@ -144,6 +144,9 @@ dotnet_diagnostic.IDE0055.severity = none
 # Enable checking for sealed classes
 dotnet_diagnostic.CA1852.severity = warning
 
+# Disable roslyn release tracking analyzer: https://github.com/dotnet/roslyn/blob/main/src/RoslynAnalyzers/Microsoft.CodeAnalysis.Analyzers/ReleaseTrackingAnalyzers.Help.md
+dotnet_diagnostic.RS2008.severity = none
+
 # Xml project files
 [*.{csproj,slnx}]
 indent_size = 2

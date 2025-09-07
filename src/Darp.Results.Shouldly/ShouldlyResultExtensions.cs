@@ -2,6 +2,7 @@
 
 namespace Darp.Results.Shouldly;
 
+/// <summary> Extensions for working with Shouldly and <see cref="Result{T,E}"/> </summary>
 public static class ShouldlyResultExtensions
 {
     /// <summary>Asserts Success; on failure includes the error string.</summary>

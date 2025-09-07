@@ -106,8 +106,10 @@ public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue,
         public Result<TValue, TNewError>.Ok As<TNewError>()
         {
             // Do not allocate a new ok if the TNewError == TError
+#pragma warning disable CA1508 // Statis analysis does not recognize that TNewValue might be TValue
             if (this is Result<TValue, TNewError>.Ok ok)
                 return ok;
+#pragma warning restore CA1508
             return new Result<TValue, TNewError>.Ok(Value, Metadata);
         }
 
@@ -160,8 +162,10 @@ public abstract partial class Result<TValue, TError> : IEquatable<Result<TValue,
         public Result<TNewValue, TError>.Err As<TNewValue>()
         {
             // Do not allocate a new error if the TNewValue == TValue
+#pragma warning disable CA1508 // Statis analysis does not recognize that TNewValue might be TValue
             if (this is Result<TNewValue, TError>.Err err)
                 return err;
+#pragma warning restore CA1508
             return new Result<TNewValue, TError>.Err(Error, Metadata);
         }
 
