@@ -36,7 +36,15 @@ jobs:
       - name: Restore dependencies
         run:  dotnet restore
       - name: Build
-        run: dotnet build --no-restore --configuration Release /p:TreatWarningsAsErrors="true"
+        run: |
+          # Build src projects by treating warnings as errors
+          for proj in $(find src -name '*.csproj'); do
+            dotnet build "$proj" --no-restore --configuration Release /p:TreatWarningsAsErrors=true
+          done
+          # Build test projects normally
+          for proj in $(find test -name '*.csproj'); do
+            dotnet build "$proj" --no-restore --configuration Release
+          done
       - name: Test
         run: dotnet test --no-build --configuration Release
 
