@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using static Darp.Results.Result;
 
 namespace Darp.Results;
 
@@ -11,13 +12,11 @@ partial class Result<TValue, TError>
     /// <returns> The result with the new metadata. </returns>
     public Result<TValue, TError> WithMetadata(string key, object value)
     {
-        var newMetadata = new ReadOnlyDictionary<string, object>(
-            new Dictionary<string, object>(Metadata) { [key] = value }
-        );
+        var newMetadata = new Dictionary<string, object>(Metadata) { [key] = value };
         return this switch
         {
-            Ok(var v) => new Ok(v, newMetadata),
-            Err(var error) => new Err(error, newMetadata),
+            Ok<TValue, TError>(var v) => new Ok<TValue, TError>(v, readOnlyMetadata: newMetadata),
+            Err<TValue, TError>(var error) => new Err<TValue, TError>(error, readOnlyMetadata: newMetadata),
             _ => throw new UnreachableException(),
         };
     }
@@ -30,8 +29,8 @@ partial class Result<TValue, TError>
         var newMetadata = new ReadOnlyDictionary<string, object>(Metadata.Concat(metadata).ToDictionary());
         return this switch
         {
-            Ok(var v) => new Ok(v, newMetadata),
-            Err(var error) => new Err(error, newMetadata),
+            Ok<TValue, TError>(var v) => new Ok<TValue, TError>(v, readOnlyMetadata: newMetadata),
+            Err<TValue, TError>(var error) => new Err<TValue, TError>(error, readOnlyMetadata: newMetadata),
             _ => throw new UnreachableException(),
         };
     }

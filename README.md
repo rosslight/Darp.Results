@@ -18,8 +18,8 @@ A Result type implementation for C# that provides a safe way to handle operation
 using Darp.Results;
 
 // Create Results
-Result<int, string> success = Result.Ok<int, string>(42);
-Result<int, string> failure = Result.Error<int, string>("Something went wrong");
+Result<int, string> success = new Result.Ok<int, string>(42);
+Result<int, string> failure = new Result.Err<int, string>("Something went wrong");
 
 // Implicit conversions
 Result<int, string> implicitSuccess = 42;
@@ -32,8 +32,8 @@ if (result.TryGetError(out string error)) { /* handle error */ }
 // Switch on result
 return result switch 
 {
-    Result<int, string>.Ok(var value) => value,
-    Result<int, string>.Err(var error) => error,
+    Result.Ok<int, string>(var value) => value,
+    Result.Err<int, string>(var error) => error,
 }
 ```
 
@@ -62,12 +62,6 @@ Existing projects did not fit all the requirements. However, these projects were
 
 #### Factory Methods
 ```csharp
-// Create success result
-Result<TValue, TError> Result.Ok<TValue, TError>(TValue value, IDictionary<string, object>? metadata = null)
-
-// Create error result  
-Result<TValue, TError> Result.Error<TValue, TError>(TError error, IDictionary<string, object>? metadata = null)
-
 // Try-catch wrapper
 Result<TValue, Exception> Result.Try<TValue>(Func<TValue> func)
 
@@ -97,13 +91,13 @@ bool IsErr { get; } // True if result is error
 ```csharp
 // Extract value
 bool TryGetValue(out TValue value)
-bool TryGetValue(out TValue value, out Result<TNewValue, TError>.Err error)
-bool TryGetValue<TNewValue>(out TValue value, out Result<TNewValue, TError>.Err error)
+bool TryGetValue(out TValue value, out Result.Err<TNewValue, TError> error)
+bool TryGetValue<TNewValue>(out TValue value, out Result.Err<TNewValue, TError> error)
 
 // Extract error
 bool TryGetError(out TError error)
-bool TryGetError(out TError error, out Result<TValue, TNewError>.Ok success)
-bool TryGetError<TNewError>(out TError error, out Result<TValue, TNewError>.Ok success)
+bool TryGetError(out TError error, out Result.Ok<TValue, TNewError> success)
+bool TryGetError<TNewError>(out TError error, out Result.Ok<TValue, TNewError> success)
 
 // Extract with a default value
 TValue Unwrap(TValue defaultValue)           // Returns value or default
@@ -218,7 +212,7 @@ public Result<string, StandardError> WorkWithResult(Result<int, StandardError> r
 ```csharp
 var result = Result.Ok<int, string>(10)
     .Map(x => x * 2)
-    .And(x => x > 15 ? Result.Ok<string, string>($"Big: {x}") : Result.Error<string, string>("Too small"))
+    .And(x => x > 15 ? new Result.Ok<string, string>($"Big: {x}") : new Result.Err<string, string>("Too small"))
     .Map(s => s.ToUpper());
 
 result.ShouldHaveValue("BIG: 20");
@@ -231,8 +225,8 @@ public Result<string, StandardError> SwitchOnResult(Result<int, StandardError> r
 {
     return result switch
     {
-        Result<int, StandardError>.Ok(var value, var metadata) => value.ToString(),
-        Result<int, StandardError>.Err(var error, var metadata) => error,
+        Result.Ok<int, StandardError>(var value, var metadata) => value.ToString(),
+        Result.Err<int, StandardError>(var error, var metadata) => error,
     };
 }
 ```

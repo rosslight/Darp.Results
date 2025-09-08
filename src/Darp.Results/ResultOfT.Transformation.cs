@@ -1,3 +1,5 @@
+using static Darp.Results.Result;
+
 namespace Darp.Results;
 
 partial class Result<TValue, TError>
@@ -8,12 +10,12 @@ partial class Result<TValue, TError>
     /// <param name="func"> The function to transform the value </param>
     /// <typeparam name="TNewValue"> The type of the new value </typeparam>
     /// <returns> The result with a new value or the existing error </returns>
-    /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.map"/>
+    /// <seealso href="https://doc.rust-lang.org/std/result/enum.html#method.map"/>
     public Result<TNewValue, TError> Map<TNewValue>(Func<TValue, TNewValue> func)
     {
         ArgumentNullException.ThrowIfNull(func);
-        return TryGetValue(out TValue? value, out Result<TNewValue, TError>.Err? err)
-            ? new Result<TNewValue, TError>.Ok(func(value), Metadata)
+        return TryGetValue(out TValue? value, out Err<TNewValue, TError>? err)
+            ? new Ok<TNewValue, TError>(func(value), Metadata)
             : err;
     }
 
@@ -26,8 +28,8 @@ partial class Result<TValue, TError>
     public Result<TValue, TNewError> MapError<TNewError>(Func<TError, TNewError> func)
     {
         ArgumentNullException.ThrowIfNull(func);
-        return TryGetError(out TError? error, out Result<TValue, TNewError>.Ok? ok)
-            ? new Result<TValue, TNewError>.Err(func(error), Metadata)
+        return TryGetError(out TError? error, out Ok<TValue, TNewError>? ok)
+            ? new Err<TValue, TNewError>(func(error), Metadata)
             : ok;
     }
 
@@ -39,7 +41,7 @@ partial class Result<TValue, TError>
     /// <returns> The result with a new value or the existing error </returns>
     public Result<TNewValue, TError> And<TNewValue>(Result<TNewValue, TError> result)
     {
-        return TryGetValue(out _, out Result<TNewValue, TError>.Err? error) ? result : error;
+        return TryGetValue(out _, out Err<TNewValue, TError>? error) ? result : error;
     }
 
     /// <summary>
@@ -51,7 +53,7 @@ partial class Result<TValue, TError>
     public Result<TNewValue, TError> And<TNewValue>(Func<TValue, Result<TNewValue, TError>> resultProvider)
     {
         ArgumentNullException.ThrowIfNull(resultProvider);
-        return TryGetValue(out TValue? value, out Result<TNewValue, TError>.Err? error) ? resultProvider(value) : error;
+        return TryGetValue(out TValue? value, out Err<TNewValue, TError>? error) ? resultProvider(value) : error;
     }
 
     /// <summary>
@@ -62,7 +64,7 @@ partial class Result<TValue, TError>
     /// <returns> The result with a new error or the existing value </returns>
     public Result<TValue, TNewError> Or<TNewError>(Result<TValue, TNewError> result)
     {
-        return TryGetError(out TError? _, out Result<TValue, TNewError>.Ok? ok) ? result : ok;
+        return TryGetError(out TError? _, out Ok<TValue, TNewError>? ok) ? result : ok;
     }
 
     /// <summary>
@@ -74,6 +76,6 @@ partial class Result<TValue, TError>
     public Result<TValue, TNewError> Or<TNewError>(Func<TError, Result<TValue, TNewError>> resultProvider)
     {
         ArgumentNullException.ThrowIfNull(resultProvider);
-        return TryGetError(out TError? error, out Result<TValue, TNewError>.Ok? ok) ? resultProvider(error) : ok;
+        return TryGetError(out TError? error, out Ok<TValue, TNewError>? ok) ? resultProvider(error) : ok;
     }
 }

@@ -54,62 +54,62 @@ public sealed class ResultRetrievalTests
 
     private Result<int, Error> TryGetValueEarlyReturn(Result<string, Error> result)
     {
-        if (!result.TryGetValue(out string? value, out Result<int, Error>.Err? errorResult))
+        if (!result.TryGetValue(out string? value, out Err<int, Error>? errorResult))
             return errorResult;
         return 1;
     }
 
     private Result<string, Error> TryGetValueEarlyReturn2(Result<string, Error> result)
     {
-        if (!result.TryGetValue(out string? value, out Result<string, Error>.Err? errorResult))
+        if (!result.TryGetValue(out string? value, out Err<string, Error>? errorResult))
             return errorResult;
         return value;
     }
 
     public Result<string, StandardError> Xx(Result<int, StandardError> r)
     {
-        if (!r.TryGetValue(out int value, out Result<string, StandardError>.Err? e1))
+        if (!r.TryGetValue(out int value, out Err<string, StandardError>? e1))
             return e1;
-        if (r is Result<int, StandardError>.Err err)
+        if (r is Err<int, StandardError> err)
             return err.As<string>();
         return "Ok";
     }
 
     public Result<int, StandardError> Xxx(Result<int, StandardError> r)
     {
-        if (!r.TryGetValue(out int v1, out Result<int, StandardError>.Err? e1))
+        if (!r.TryGetValue(out int v1, out Err<int, StandardError>? e1))
             return e1;
-        if (r is Result<int, StandardError>.Err e2)
+        if (r is Err<int, StandardError> e2)
             return e2;
         if (!r.TryGetValue(out int v2))
             return r;
         return r switch
         {
-            Result<int, StandardError>.Ok(var value) => value,
-            Result<int, StandardError>.Err(var error) => error,
+            Ok<int, StandardError>(var value) => value,
+            Err<int, StandardError>(var error) => error,
         };
     }
 
     public async Task<Result<string, StandardError>> X()
     {
-        Result<int, string> r = Result.Try(() => 1).MapError(e => e.Message);
-        var result = Result.From<string, int>("42", int.TryParse);
+        Result<int, string> r = Try(() => 1).MapError(e => e.Message);
+        var result = From<string, int>("42", int.TryParse);
 
         Result<Func<int>, string> re = null!;
         // Should error
         _ = re.Unwrap(() => 123);
 
         // Warning
-        Result.From<string, int>("42", int.TryParse); // Result not checked
-        await Task.Run(() => Result.From<string, int>("42", int.TryParse)); // Result not checked
+        From<string, int>("42", int.TryParse); // Result not checked
+        await Task.Run(() => From<string, int>("42", int.TryParse)); // Result not checked
         // Should info
         //if (result.IsError)
         //    return result.Error; // Loses optional metadata, replace with if (result.TryGetError(out Result<string, Error> resultWithError)) return resultWithError;
         Result<Result<int, string>, string> rr = null!;
-        return Result.From<string, int>("42", int.TryParse) switch
+        return From<string, int>("42", int.TryParse) switch
         {
-            Result<int, StandardError>.Ok(var ok) => throw new System.NotImplementedException(),
-            Result<int, StandardError>.Err(var err) => throw new System.NotImplementedException(),
+            Ok<int, StandardError>(var ok) => throw new System.NotImplementedException(),
+            Err<int, StandardError>(var err) => throw new System.NotImplementedException(),
         };
     }
 }

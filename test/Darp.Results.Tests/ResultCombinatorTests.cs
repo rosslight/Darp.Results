@@ -80,7 +80,7 @@ public sealed class ResultLogicalCombinatorsTests
     public void Or_WithOk_ReturnsSelf()
     {
         Result<int, Error> a = 5;
-        var b = Result.Ok<int, Error>(10);
+        var b = new Ok<int, Error>(10);
         Result<int, Error> r = a.Or(b);
         r.ShouldHaveValue(5);
     }
@@ -89,7 +89,7 @@ public sealed class ResultLogicalCombinatorsTests
     public void Or_WithErr_ReturnsProvided()
     {
         Result<int, Error> a = Error.Error1;
-        var b = Result.Ok<int, Error>(10);
+        var b = new Ok<int, Error>(10);
         Result<int, Error> r = a.Or(b);
         r.ShouldHaveValue(10);
     }
@@ -98,7 +98,7 @@ public sealed class ResultLogicalCombinatorsTests
     public void Or_Lambda_SameError_Err_CallsLambda()
     {
         Result<int, Error> a = Error.Error2;
-        Result<int, Error> r = a.Or(e => Result.Ok<int, Error>((int)e));
+        Result<int, Error> r = a.Or(e => new Ok<int, Error>((int)e));
         r.ShouldHaveValue((int)Error.Error2);
     }
 
@@ -106,7 +106,7 @@ public sealed class ResultLogicalCombinatorsTests
     public void Or_Lambda_SameError_Ok_SkipsLambda()
     {
         Result<int, Error> a = 3;
-        Result<int, Error> r = a.Or(_ => Result.Ok<int, Error>(999));
+        Result<int, Error> r = a.Or(_ => new Ok<int, Error>(999));
         r.ShouldHaveValue(3);
     }
 
@@ -114,7 +114,7 @@ public sealed class ResultLogicalCombinatorsTests
     public void Or_Lambda_NewError_Err_CallsLambda()
     {
         Result<int, Error> a = Error.Error1;
-        Result<int, NewError> r = a.Or<NewError>(_ => Result.Error<int, NewError>(NewError.Error2));
+        Result<int, NewError> r = a.Or(_ => new Err<int, NewError>(NewError.Error2));
         r.ShouldHaveError(NewError.Error2);
     }
 }

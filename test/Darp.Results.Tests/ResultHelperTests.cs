@@ -7,10 +7,10 @@ public sealed class ResultFlattenAndFactoriesTests
     [Fact]
     public void Flatten_OkOk_ReturnsInnerOk()
     {
-        var inner = Result.Ok<int, Error>(1);
-        var outer = Result.Ok<Result<int, Error>, Error>(inner);
+        var inner = new Ok<int, Error>(1);
+        var outer = new Ok<Result<int, Error>, Error>(inner);
 
-        var flat = Result.Flatten(outer);
+        var flat = Flatten(outer);
 
         flat.ShouldHaveValue(1);
     }
@@ -18,10 +18,10 @@ public sealed class ResultFlattenAndFactoriesTests
     [Fact]
     public void Flatten_OkErr_ReturnsErr()
     {
-        var inner = Result.Error<int, Error>(Error.Error1);
-        var outer = Result.Ok<Result<int, Error>, Error>(inner);
+        var inner = new Err<int, Error>(Error.Error1);
+        var outer = new Ok<Result<int, Error>, Error>(inner);
 
-        var flat = Result.Flatten(outer);
+        var flat = Flatten(outer);
 
         flat.ShouldHaveError(Error.Error1);
     }
@@ -29,9 +29,9 @@ public sealed class ResultFlattenAndFactoriesTests
     [Fact]
     public void Flatten_Err_ReturnsOuterErr()
     {
-        var outer = Result.Error<Result<int, Error>, Error>(Error.Error2);
+        var outer = new Err<Result<int, Error>, Error>(Error.Error2);
 
-        var flat = Result.Flatten(outer);
+        var flat = Flatten(outer);
 
         flat.ShouldHaveError(Error.Error2);
     }
@@ -39,7 +39,7 @@ public sealed class ResultFlattenAndFactoriesTests
     [Fact]
     public void Try_Factory_Success_CapturesValue()
     {
-        var res = Result.Try(() => 10);
+        var res = Try(() => 10);
         res.ShouldHaveValue(10);
     }
 
@@ -47,28 +47,28 @@ public sealed class ResultFlattenAndFactoriesTests
     public void Try_Factory_Failure_CapturesException()
     {
         var ex = new InvalidOperationException("boom");
-        var res = Result.Try<int>(() => throw ex);
+        var res = Try<int>(() => throw ex);
         res.ShouldHaveError(ex);
     }
 
     [Fact]
     public void From_TryParse_Success()
     {
-        var res = Result.From<string, int>("42", int.TryParse);
+        var res = From<string, int>("42", int.TryParse);
         res.ShouldHaveValue(42);
     }
 
     [Fact]
     public void From_TryParse_Failure_ReturnsStandardErrorTryPatternFailed()
     {
-        var res = Result.From<string, int>("xx", int.TryParse);
+        var res = From<string, int>("xx", int.TryParse);
         res.ShouldHaveError(StandardError.TryPatternFailed);
     }
 
     [Fact]
     public void From_TryParse_Exception_ReturnsStandardErrorExceptionOccured()
     {
-        var res = Result.From<string, int>("42", Throwing);
+        var res = From<string, int>("42", Throwing);
         res.ShouldHaveError(StandardError.ExceptionOccured);
         return;
 

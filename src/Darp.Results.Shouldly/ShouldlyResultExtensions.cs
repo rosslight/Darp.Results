@@ -1,4 +1,5 @@
 ﻿using Shouldly;
+using static Darp.Results.Result;
 
 namespace Darp.Results.Shouldly;
 
@@ -17,7 +18,7 @@ public static class ShouldlyResultExtensions
     )
     {
         result.ShouldNotBeNull(customMessage ?? "Result should not be null.");
-        if (result.TryGetValue(out TValue? value, out Result<TValue, TError>.Err? error))
+        if (result.TryGetValue(out TValue? value, out Err<TValue, TError>? error))
             return value;
         string err = StringifyError(error.Error);
         throw new ShouldAssertException(
@@ -72,7 +73,7 @@ public static class ShouldlyResultExtensions
     {
         result.ShouldNotBeNull(customMessage ?? "Result should not be null.");
 
-        if (result.TryGetError(out TError? error, out Result<TValue, TError>.Ok? ok))
+        if (result.TryGetError(out TError? error, out Ok<TValue, TError>? ok))
             return error;
         string val = StringifyValue(ok.Value);
         throw new ShouldAssertException(

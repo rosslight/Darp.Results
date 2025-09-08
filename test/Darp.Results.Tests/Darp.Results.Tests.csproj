@@ -14,6 +14,7 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="Darp.Results.Result" Static="True" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Darp.Results\Darp.Results.csproj" />

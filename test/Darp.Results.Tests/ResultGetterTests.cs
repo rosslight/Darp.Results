@@ -8,7 +8,7 @@ public sealed class ResultGetterTests
     public void TryGetValue_WithOutErr_PropagatesErrType()
     {
         Result<int, Error> result = Error.Error2;
-        bool ok = result.TryGetValue(out int v, out Result<string, Error>.Err? e);
+        bool ok = result.TryGetValue(out int v, out Err<string, Error>? e);
         ok.ShouldBeFalse();
         v.ShouldBe(0);
         _ = e.ShouldNotBeNull();
@@ -19,7 +19,7 @@ public sealed class ResultGetterTests
     public void TryGetError_WithOutOk_PropagatesOkType()
     {
         Result<int, Error> result = 5;
-        bool isErr = result.TryGetError(out Error err, out Result<int, NewError>.Ok? ok);
+        bool isErr = result.TryGetError(out Error err, out Ok<int, NewError>? ok);
         isErr.ShouldBeFalse();
         err.ShouldBe(default);
         _ = ok.ShouldNotBeNull();

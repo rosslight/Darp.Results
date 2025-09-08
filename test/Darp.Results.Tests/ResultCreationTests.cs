@@ -34,7 +34,7 @@ public sealed class ResultCreationTests
     {
         const int value = 42;
 
-        var result = Result.Ok<int, Error>(value);
+        var result = new Ok<int, Error>(value);
 
         result.ShouldHaveValue(value);
     }
@@ -44,7 +44,7 @@ public sealed class ResultCreationTests
     {
         const Error error = Error.Error1;
 
-        var result = Result.Error<int, Error>(error);
+        var result = new Err<int, Error>(error);
 
         result.ShouldHaveError(error);
     }
@@ -55,7 +55,7 @@ public sealed class ResultCreationTests
         const int value = 42;
         var metadata = new Dictionary<string, object> { ["Key1"] = "Value1", ["Key2"] = 2 };
 
-        var result = Result.Ok<int, Error>(value, metadata);
+        var result = new Ok<int, Error>(value, metadata);
 
         result.ShouldHaveValue(value);
         result.Metadata.ShouldBe(metadata);
@@ -67,7 +67,7 @@ public sealed class ResultCreationTests
         const Error error = Error.Error1;
         var metadata = new Dictionary<string, object> { ["Key1"] = "Value1", ["Key2"] = 2 };
 
-        var result = Result.Error<int, Error>(error, metadata);
+        var result = new Err<int, Error>(error, metadata);
 
         result.ShouldHaveError(error);
         result.Metadata.ShouldBe(metadata);
