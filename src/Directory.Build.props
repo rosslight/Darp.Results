@@ -4,6 +4,7 @@
     <AnalysisLevel>latest-all</AnalysisLevel>
     <IsPackable>true</IsPackable>
     <Authors>rosslight GmbH</Authors>
+    <PackageProjectUrl>https://github.com/rosslight/Darp.Results</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/rosslight/Darp.Results.git</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
