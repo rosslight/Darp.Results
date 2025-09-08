@@ -31,8 +31,8 @@ public sealed class SuppressExistingEnumAnalysisSuppressorTests
         const string text = """
             Result<int, string> Do(Result<int, string> r) {
                 return r switch {
-                    Result<int, string>.Ok ok => ok.Value,
-                    Result<int, string>.Err err => err.Error,
+                    Result.Ok<int, string> ok => ok.Value,
+                    Result.Err<int, string> err => err.Error,
                 };
             }
             """;

@@ -65,11 +65,7 @@ public sealed class HandleSwitchCorrectlyCodeFixer : CodeFixProvider
         );
         // Build new arms: <identifier> => throw new ...
         IEnumerable<SwitchExpressionArmSyntax> newArms = toAdd.Select(p =>
-            SwitchExpressionArm(
-                ConstantPattern(ParseExpression(p)),
-                whenClause: null,
-                expression: notImplementedExpression
-            )
+            SwitchExpressionArm(TypePattern(ParseName(p)), whenClause: null, expression: notImplementedExpression)
         );
 
         // Calculate position to insert at

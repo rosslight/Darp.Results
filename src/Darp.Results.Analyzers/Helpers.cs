@@ -71,4 +71,11 @@ internal static class Helpers
         // Otherwise, it's being assigned, returned, passed as an argument, etc.
         return false;
     }
+
+    public static string GetResultCaseName(ITypeSymbol resultType, string resultCase)
+    {
+        if (resultType is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length != 2)
+            return $"Result.{resultCase}<,>";
+        return $"Result.{resultCase}<{namedTypeSymbol.TypeArguments[0]}, {namedTypeSymbol.TypeArguments[1]}>";
+    }
 }

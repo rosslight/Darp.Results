@@ -18,8 +18,8 @@ public sealed class HandleSwitchCorrectlyAnalyzerTests
         const string text = """
             Result<int, string> Do(Result<int, string> r) {
                 return r switch {
-                    Result<int, string>.Ok ok => ok.Value,
-                    Result<int, string>.Err err => err.Error,
+                    Result.Ok<int, string> ok => ok.Value,
+                    Result.Err<int, string> err => err.Error,
                 };
             }
             """;
@@ -33,7 +33,7 @@ public sealed class HandleSwitchCorrectlyAnalyzerTests
         const string text = """
             Result<int, string> Do(Result<int, string> r) {
                 return r switch {
-                    Result<int, string>.Ok ok => ok.Value,
+                    Result.Ok<int, string> ok => ok.Value,
                     _ => "error",
                 };
             }
@@ -48,7 +48,7 @@ public sealed class HandleSwitchCorrectlyAnalyzerTests
         const string text = """
             Result<int, string> Do(Result<int, string> r) {
                 return r switch {
-                    Result<int, string>.Err err => err.Error,
+                    Result.Err<int, string> err => err.Error,
                     _ => 1,
                 };
             }
@@ -63,15 +63,15 @@ public sealed class HandleSwitchCorrectlyAnalyzerTests
         const string text = """
             Result<int, string> Do(Result<int, string> r) {
                 return r switch {
-                    Result<int, string>.Ok ok => ok.Value,
+                    Result.Ok<int, string> ok => ok.Value,
                 };
             }
             """;
         const string fixedText = """
             Result<int, string> Do(Result<int, string> r) {
                 return r switch {
-                    Result<int, string>.Ok ok => ok.Value,
-                    Result<int, string>.Err => throw new System.NotImplementedException()
+                    Result.Ok<int, string> ok => ok.Value,
+                    Result.Err<int, string> => throw new System.NotImplementedException()
                 };
             }
             """;
@@ -79,7 +79,7 @@ public sealed class HandleSwitchCorrectlyAnalyzerTests
         DiagnosticResult expected = Verifier
             .Diagnostic()
             .WithSpan(7, 14, 7, 20)
-            .WithArguments("Result<int, string>.Err");
+            .WithArguments("Result.Err<int, string>");
         await ResultHelpers.VerifyCodeFixAsync<HandleSwitchCorrectlyAnalyzer, HandleSwitchCorrectlyCodeFixer>(
             text,
             expected,
@@ -93,15 +93,15 @@ public sealed class HandleSwitchCorrectlyAnalyzerTests
         const string text = """
             Result<int, string> Do(Result<int, string> r) {
                 return r switch {
-                    Result<int, string>.Err err => err.Error,
+                    Result.Err<int, string> err => err.Error,
                 };
             }
             """;
         const string fixedText = """
             Result<int, string> Do(Result<int, string> r) {
                 return r switch {
-                    Result<int, string>.Ok => throw new System.NotImplementedException(),
-                    Result<int, string>.Err err => err.Error
+                    Result.Ok<int, string> => throw new System.NotImplementedException(),
+                    Result.Err<int, string> err => err.Error
                 };
             }
             """;
@@ -109,7 +109,7 @@ public sealed class HandleSwitchCorrectlyAnalyzerTests
         DiagnosticResult expected = Verifier
             .Diagnostic()
             .WithSpan(7, 14, 7, 20)
-            .WithArguments("Result<int, string>.Ok");
+            .WithArguments("Result.Ok<int, string>");
         await ResultHelpers.VerifyCodeFixAsync<HandleSwitchCorrectlyAnalyzer, HandleSwitchCorrectlyCodeFixer>(
             text,
             expected,
@@ -129,8 +129,8 @@ public sealed class HandleSwitchCorrectlyAnalyzerTests
         const string fixedText = """
             Result<int, string> Do(Result<int, string> r) {
                 return r switch {
-                    Result<int, string>.Ok => throw new System.NotImplementedException(),
-                    Result<int, string>.Err => throw new System.NotImplementedException()
+                    Result.Ok<int, string> => throw new System.NotImplementedException(),
+                    Result.Err<int, string> => throw new System.NotImplementedException()
                 };
             }
             """;
@@ -138,7 +138,7 @@ public sealed class HandleSwitchCorrectlyAnalyzerTests
         DiagnosticResult expected = Verifier
             .Diagnostic()
             .WithSpan(7, 14, 7, 20)
-            .WithArguments("Result<int, string>.Ok");
+            .WithArguments("Result.Ok<int, string>");
         await ResultHelpers.VerifyCodeFixAsync<HandleSwitchCorrectlyAnalyzer, HandleSwitchCorrectlyCodeFixer>(
             text,
             expected,
