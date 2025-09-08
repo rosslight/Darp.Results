@@ -10,7 +10,7 @@ A Result type implementation for C# that provides a safe way to handle operation
 ## Packages
 
 - **[Darp.Results](https://www.nuget.org/packages/Darp.Results)** - Core Result type implementation including Analyzers/CodeFixers
-- **[Darp.Results.Shouldly](https://www.nuget.org/packages/Darp.Results.Shouldly)** - Shouldly extensions for Result testing
+- **[Darp.Results.Shouldly](https://www.nuget.org/packages/Darp.Results.Shouldly)** - [Shouldly](https://github.com/shouldly/shouldly) extensions for Result testing
 
 ## Quick Start
 
@@ -201,7 +201,7 @@ To achieve early returns, rust provides the `?` operator. Due to shortcomings of
 ```csharp
 public Result<string, StandardError> WorkWithResult(Result<int, StandardError> result)
 {
-    if (!result.TryGetValue(out int value, out Result<string, StandardError>.Err? err))
+    if (!result.TryGetValue(out int value, out Result.Err<string, StandardError>? err))
         return err;
     // ...
     return value.ToString();

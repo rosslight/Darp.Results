@@ -11,20 +11,28 @@ internal static class Helpers
     public const string ResultErrName = "Err";
     public const string ResultOkName = "Ok";
 
-    public static bool IsOrExtendsResult([NotNullWhen(true)] this ITypeSymbol? type)
+    public static bool IsOrExtendsResult([NotNullWhen(true)] this ITypeSymbol? type) => type.IsOrExtendsResult(out _);
+
+    public static bool IsOrExtendsResult([NotNullWhen(true)] this ITypeSymbol? type, out bool isWrappedInTask)
     {
         while (type is INamedTypeSymbol named)
         {
-            if (
-                named is { Arity: 2, OriginalDefinition.Name: ResultName }
-                && named.ContainingNamespace?.ToDisplayString() == ResultNamespace
-            )
+            switch (named)
             {
-                return true;
+                case { Arity: 2, OriginalDefinition.Name: ResultName }
+                    when named.ContainingNamespace?.ToDisplayString() == ResultNamespace:
+                    isWrappedInTask = false;
+                    return true;
+                case { Arity: 1, OriginalDefinition.Name: "Task" or "ValueTask" }
+                    when named.ContainingNamespace?.ToDisplayString() == "System.Threading.Tasks":
+                    isWrappedInTask = true;
+                    return named.TypeArguments[0].IsOrExtendsResult(out _);
+                default:
+                    type = named.BaseType;
+                    break;
             }
-
-            type = named.BaseType;
         }
+        isWrappedInTask = false;
         return false;
     }
 
@@ -42,7 +50,7 @@ internal static class Helpers
         return SymbolEqualityComparer.Default.Equals(type.BaseType, resultType);
     }
 
-    public static bool IsUnused(this IInvocationOperation invocation, bool countDiscardsAsUnused = false)
+    public static bool IsUnused(this IInvocationOperation invocation, bool isTask, bool countDiscardsAsUnused = false)
     {
         // Climb over implicit conversions.
         IOperation node = invocation;
@@ -50,11 +58,13 @@ internal static class Helpers
             node = conv;
 
         // Handle `await Call();` — the invocation is inside an await node.
-        if (node.Parent is IAwaitOperation awaitOp)
+        if (isTask)
         {
+            if (node.Parent is not IAwaitOperation awaitOp)
+                return false;
             node = awaitOp;
             // Skip implicit conversions above await, if any.
-            while (node.Parent is IConversionOperation conv2 && conv2.IsImplicit)
+            while (node.Parent is IConversionOperation { IsImplicit: true } conv2)
                 node = conv2;
         }
 

@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Darp.Results.Analyzers.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzer : DiagnosticAnalyzer
+public sealed class ResultReturnValueUsedAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.UseReturnValueIdentifier,
@@ -35,11 +35,10 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzer : DiagnosticA
     {
         var invocation = (IInvocationOperation)context.Operation;
         ITypeSymbol? returnType = invocation.Type;
-        if (!returnType.IsOrExtendsResult())
+        if (!returnType.IsOrExtendsResult(out bool isTask))
             return;
-        if (!invocation.IsUnused(countDiscardsAsUnused: false))
+        if (!invocation.IsUnused(isTask, countDiscardsAsUnused: false))
             return;
-
         // Build a helpful diagnostic.
         string methodName = invocation.TargetMethod.Name;
 

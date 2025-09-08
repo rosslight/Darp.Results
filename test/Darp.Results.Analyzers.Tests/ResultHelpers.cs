@@ -23,11 +23,34 @@ public static class ResultHelpers
             """;
     }
 
+    private static string InAsyncMethod(string body)
+    {
+        return $$"""
+            using Darp.Results;using System.Threading.Tasks;
+
+            internal static class MyTestClass
+            {
+                public static async Task MyAsyncMethod() {
+            {{body}}
+                }
+            }
+            """;
+    }
+
     public static Task VerifyInMethodAsync<TAnalyzer>(string methodBody, params DiagnosticResult[] expected)
         where TAnalyzer : DiagnosticAnalyzer, new()
     {
         return AnalyzerVerifier<TAnalyzer, ResultAnalyzerTest<TAnalyzer>, DefaultVerifier>.VerifyAnalyzerAsync(
             InMethod(methodBody),
+            expected
+        );
+    }
+
+    public static Task VerifyInAsyncMethodAsync<TAnalyzer>(string methodBody, params DiagnosticResult[] expected)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+    {
+        return AnalyzerVerifier<TAnalyzer, ResultAnalyzerTest<TAnalyzer>, DefaultVerifier>.VerifyAnalyzerAsync(
+            InAsyncMethod(methodBody),
             expected
         );
     }
