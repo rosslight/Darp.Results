@@ -99,4 +99,36 @@ public sealed class ResultGetterTests
         InvalidOperationException ex = Should.Throw<InvalidOperationException>(() => _ = result.ExpectError("err-msg"));
         ex.Message.ShouldBe("err-msg");
     }
+
+    [Fact]
+    public void UnwrapOrDefault_Ok_ValueType_ReturnsValue()
+    {
+        Result<int, Error> result = 7;
+        int value = result.UnwrapOrDefault();
+        value.ShouldBe(7);
+    }
+
+    [Fact]
+    public void UnwrapOrDefault_Err_ValueType_ReturnsDefault()
+    {
+        Result<int, Error> result = Error.Error1;
+        int value = result.UnwrapOrDefault();
+        value.ShouldBe(0);
+    }
+
+    [Fact]
+    public void UnwrapOrDefault_Ok_ReferenceType_ReturnsValue()
+    {
+        Result<string, Error> result = "abc";
+        string? value = result.UnwrapOrDefault();
+        value.ShouldBe("abc");
+    }
+
+    [Fact]
+    public void UnwrapOrDefault_Err_ReferenceType_ReturnsNull()
+    {
+        Result<string, Error> result = Error.Error2;
+        string? value = result.UnwrapOrDefault();
+        value.ShouldBeNull();
+    }
 }

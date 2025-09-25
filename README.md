@@ -60,6 +60,19 @@ Existing projects did not fit all the requirements. However, these projects were
 
 ### Creation
 
+#### Constructors / Implicit Conversions
+```csharp
+// Value to Result
+Result<int, string> result = 42; // Creates Ok(42)
+Result<int, string> result = new Result.Ok<int, string>(42);
+Result<int, string> result = new Result.Ok<int, string>(42, metadata: new Dictionary<string, object>());
+
+// Error to Result  
+Result<int, string> result = "error"; // Creates Err("error")
+Result<int, string> result = new Result.Err<int, string>("error");
+Result<int, string> result = new Result.Err<int, string>("error", metadata: new Dictionary<string, object>());
+```
+
 #### Factory Methods
 ```csharp
 // Try-catch wrapper
@@ -67,15 +80,6 @@ Result<TValue, Exception> Result.Try<TValue>(Func<TValue> func)
 
 // TryParse wrapper
 Result<TValue, StandardError> Result.From<T, TValue>(T input, TryParseFunc<T, TValue> tryParse)
-```
-
-#### Implicit Conversions
-```csharp
-// Value to Result
-Result<int, string> result = 42; // Creates Ok(42)
-
-// Error to Result  
-Result<int, string> result = "error"; // Creates Err("error")
 ```
 
 ### State Checking
@@ -102,6 +106,7 @@ bool TryGetError<TNewError>(out TError error, out Result.Ok<TValue, TNewError> s
 // Extract with a default value
 TValue Unwrap(TValue defaultValue)           // Returns value or default
 TValue Unwrap(Func<TValue> valueProvider)    // Returns value or computed default
+TValue? UnwrapOrDefault()                    // Returns value or default(TValue)
 ```
 
 #### Unsafe Extraction (throws on wrong state)
