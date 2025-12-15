@@ -2,7 +2,13 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
   <PropertyGroup>
     <AnalysisLevel>latest-all</AnalysisLevel>
-    <IsPackable>true</IsPackable>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">True</ContinuousIntegrationBuild>
+    <NoWarn>CA1031;CA1034</NoWarn>
+
+    <!-- Version applied to all the packages. Automatically updated by release-please -->
+    <Version>1.2.0</Version>
+
+    <!-- Common Nuget package settings -->
     <Authors>rosslight GmbH</Authors>
     <PackageProjectUrl>https://github.com/rosslight/Darp.Results</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
@@ -12,7 +18,6 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Deterministic>true</Deterministic>
-    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">True</ContinuousIntegrationBuild>
-    <NoWarn>CA1031;CA1034</NoWarn>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 </Project>
