@@ -7,6 +7,7 @@
     <Description>A result type that enables rust like pattern matching.</Description>
     <PackageTags>Darp;Rosslight;Result;Rust;Switch</PackageTags>
   </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference
       Include="..\Darp.Results.Analyzers\Darp.Results.Analyzers.csproj"
@@ -35,6 +36,7 @@
       Visible="false"
     />
   </ItemGroup>
+
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>

@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Runtime.InteropServices.JavaScript;
 using static Darp.Results.Result;
 
 namespace Darp.Results;
@@ -171,7 +170,7 @@ partial class Result<TValue, TError>
         return TryGetValue(out TValue? value, out Err<TValue, TError>? err) ? value : valueProvider(err.Error);
     }
 
-    /// <summary> Returns the <see cref="JSType.Error"/> </summary>
+    /// <summary> Returns the <see cref="Result.Err{TValue,TError}.Error"/> </summary>
     /// <returns> The underlying error, if in <see cref="Result.Err{TValue,TError}"/> state </returns>
     /// <exception cref="InvalidOperationException"> An exception, if in <see cref="Result.Ok{TValue,TError}"/> state </exception>
     /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap_err"/>
@@ -188,7 +187,7 @@ partial class Result<TValue, TError>
     public TValue Expect(string message) =>
         TryGetValue(out TValue? value) ? value : throw new InvalidOperationException(message);
 
-    /// <summary> Returns the <see cref="JSType.Error"/> with a custom message </summary>
+    /// <summary> Returns the <see cref="Result.Err{TValue,TError}.Error"/> with a custom message </summary>
     /// <returns> The underlying error, if in <see cref="Result.Err{TValue,TError}"/> state </returns>
     /// <exception cref="InvalidOperationException"> An exception, if in <see cref="Result.Ok{TValue,TError}"/> state </exception>
     /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.expect_err"/>

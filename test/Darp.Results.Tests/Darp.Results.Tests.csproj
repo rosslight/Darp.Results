@@ -5,16 +5,13 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Shouldly" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
-  </ItemGroup>
-  <ItemGroup>
-    <Using Include="Xunit" />
-    <Using Include="Darp.Results.Result" Static="True" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Darp.Results\Darp.Results.csproj" />
@@ -31,5 +28,10 @@
       ReferenceOutputAssembly="false"
       PrivateAssets="all"
     />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Darp.Results.Result" Static="True" />
   </ItemGroup>
 </Project>

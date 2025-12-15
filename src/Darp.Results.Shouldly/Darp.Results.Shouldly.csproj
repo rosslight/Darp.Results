@@ -8,12 +8,14 @@
     <PackageTags>Darp;Rosslight;Result;Shouldly</PackageTags>
     <RootNamespace>Darp.Results.Shouldly</RootNamespace>
   </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\Darp.Results\Darp.Results.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Shouldly" />
   </ItemGroup>
+
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
