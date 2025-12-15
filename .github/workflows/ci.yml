@@ -1,0 +1,34 @@
+name: Test and publish
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-test-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run:  dotnet restore
+      - name: Build
+        run: |
+          # Build src projects by treating warnings as errors
+          for proj in $(find src -name '*.csproj'); do
+            dotnet build "$proj" --no-restore --configuration Release /p:TreatWarningsAsErrors=true
+          done
+          # Build test projects normally
+          for proj in $(find test -name '*.csproj'); do
+            dotnet build "$proj" --no-restore --configuration Release
+          done
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release
