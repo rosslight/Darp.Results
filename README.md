@@ -141,6 +141,34 @@ Result<TValue, TError> Or(Func<TError, Result<TValue, TError>> resultProvider)
 Result<TValue, TNewError> Or<TNewError>(Func<TError, Result<TValue, TNewError>> resultProvider)
 ```
 
+### Task-based Extensions
+
+Chain `Task<Result<…>>` without manual `await`/unwrap boilerplate:
+```csharp
+// Map
+Task<Result<TNewValue, TError>> Map<TValue, TError, TNewValue>(Func<TValue, TNewValue> func)
+Task<Result<TValue, TNewError>> MapError<TValue, TError, TNewError>(Func<TError, TNewError> func)
+
+// And
+Task<Result<TNewValue, TError>> And<TValue, TError, TNewValue>(Result<TNewValue, TError> result)
+Task<Result<TNewValue, TError>> And<TValue, TError, TNewValue>(Func<TValue, TNewValue> resultProvider)
+Task<Result<TNewValue, TError>> And<TValue, TError, TNewValue>(Func<TValue, Result<TNewValue, TError>> resultProvider)
+
+// Or
+Task<Result<TValue, TNewError>> Or<TValue, TError, TNewError>(Result<TValue, TNewError> result)
+Task<Result<TValue, TNewError>> Or<TValue, TError, TNewError>(Func<TError, TNewError> resultProvider)
+Task<Result<TValue, TNewError>> Or<TValue, TError, TNewError>(Func<TError, Result<TValue, TNewError>> resultProvider)
+
+// Unwrap / Expect
+Task<TValue> Unwrap<TValue, TError>()
+Task<TValue> Unwrap<TValue, TError>(TValue defaultValue)
+Task<TValue> Unwrap<TValue, TError>(Func<TError, TValue> valueProvider)
+Task<TValue?> UnwrapOrDefault<TValue, TError>()
+Task<TError> UnwrapError<TValue, TError>()
+Task<TValue> Expect<TValue, TError>(string message)
+Task<TError> ExpectError<TValue, TError>(string message)
+```
+
 ### Utility Operations
 
 #### Flattening
