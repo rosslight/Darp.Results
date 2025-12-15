@@ -4,6 +4,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Content is taken from conventional commits and aggregated in a [release-please](https://github.com/googleapis/release-please) PR.
 
+## [1.3.0](https://github.com/rosslight/Darp.Results/compare/v1.2.0...v1.3.0) (2025-12-15)
+
+
+### Features
+
+* Add task based extension methods for Map, And, Or, ... ([7c29269](https://github.com/rosslight/Darp.Results/commit/7c2926936e67ed858f0dd2c0f6d9804ea9af9969))
+* Support net9.0 and net10.0 ([36929a9](https://github.com/rosslight/Darp.Results/commit/36929a9118572c245cf2e5df0f167ba437ae7407))
+
 ## [1.2.0](https://github.com/rosslight/Darp.Results/compare/v1.1.1...v1.2.0) (2025-09-25)
 
 ### Features

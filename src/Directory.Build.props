@@ -1,12 +1,12 @@
 <Project>
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"/>
   <PropertyGroup>
     <AnalysisLevel>latest-all</AnalysisLevel>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">True</ContinuousIntegrationBuild>
     <NoWarn>CA1031;CA1034</NoWarn>
 
     <!-- Version applied to all the packages. Automatically updated by release-please -->
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
 
     <!-- Common Nuget package settings -->
     <Authors>rosslight GmbH</Authors>
