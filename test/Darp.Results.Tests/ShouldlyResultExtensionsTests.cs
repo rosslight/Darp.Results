@@ -21,8 +21,8 @@ public sealed class ShouldlyResultExtensionsTests
         var task = Task.FromResult<Result<int, Error>>(Error.Error1);
         const string message = "expected success";
 
-        ShouldAssertException ex = await Should.ThrowAsync<ShouldAssertException>(() =>
-            task.ShouldBeSuccess(message)
+        ShouldAssertException ex = await Assert.ThrowsAsync<ShouldAssertException>(async () =>
+            await task.ShouldBeSuccess(message)
         );
         ex.Message.ShouldBe(message);
     }
@@ -59,8 +59,8 @@ public sealed class ShouldlyResultExtensionsTests
         var task = Task.FromResult<Result<int, Error>>(Error.Error1);
         bool called = false;
 
-        await Should.ThrowAsync<ShouldAssertException>(() =>
-            task.ShouldHaveValue(_ =>
+        await Assert.ThrowsAsync<ShouldAssertException>(async () =>
+            await task.ShouldHaveValue(_ =>
             {
                 called = true;
             })
@@ -75,8 +75,8 @@ public sealed class ShouldlyResultExtensionsTests
         var task = Task.FromResult<Result<int, Error>>(15);
         const string message = "wrong value";
 
-        ShouldAssertException ex = await Should.ThrowAsync<ShouldAssertException>(() =>
-            task.ShouldHaveValue(16, message)
+        ShouldAssertException ex = await Assert.ThrowsAsync<ShouldAssertException>(async () =>
+            await task.ShouldHaveValue(16, message)
         );
         ex.Message.ShouldContain(message);
     }
@@ -97,7 +97,9 @@ public sealed class ShouldlyResultExtensionsTests
         var task = Task.FromResult<Result<int, Error>>(17);
         const string message = "expected error";
 
-        ShouldAssertException ex = await Should.ThrowAsync<ShouldAssertException>(() => task.ShouldBeError(message));
+        ShouldAssertException ex = await Assert.ThrowsAsync<ShouldAssertException>(async () =>
+            await task.ShouldBeError(message)
+        );
         ex.Message.ShouldBe(message);
     }
 
@@ -133,8 +135,8 @@ public sealed class ShouldlyResultExtensionsTests
         var task = Task.FromResult<Result<int, Error>>(18);
         bool called = false;
 
-        await Should.ThrowAsync<ShouldAssertException>(() =>
-            task.ShouldHaveError(_ =>
+        await Assert.ThrowsAsync<ShouldAssertException>(async () =>
+            await task.ShouldHaveError(_ =>
             {
                 called = true;
             })
@@ -149,8 +151,8 @@ public sealed class ShouldlyResultExtensionsTests
         var task = Task.FromResult<Result<int, Error>>(Error.Error1);
         const string message = "wrong error";
 
-        ShouldAssertException ex = await Should.ThrowAsync<ShouldAssertException>(() =>
-            task.ShouldHaveError(Error.Error2, message)
+        ShouldAssertException ex = await Assert.ThrowsAsync<ShouldAssertException>(async () =>
+            await task.ShouldHaveError(Error.Error2, message)
         );
         ex.Message.ShouldContain(message);
     }
