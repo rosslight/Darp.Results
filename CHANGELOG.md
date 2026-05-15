@@ -4,6 +4,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Content is taken from conventional commits and aggregated in a [release-please](https://github.com/googleapis/release-please) PR.
 
+## [1.4.0](https://github.com/rosslight/Darp.Results/compare/v1.3.0...v1.4.0) (2026-05-15)
+
+
+### Features
+
+* Improve error messages by adding tostring unexpected ([847ede5](https://github.com/rosslight/Darp.Results/commit/847ede528dc268aff75128ed57adb4d9676cabf2))
+
+
+### Bug Fixes
+
+* Adding Shouldy extensions that work on tasks ([#3](https://github.com/rosslight/Darp.Results/issues/3)) ([5b0eec7](https://github.com/rosslight/Darp.Results/commit/5b0eec77cf0f4ddb9337198ac9415d423cb4408d))
+* Warn when any awaited result is unused ([#2](https://github.com/rosslight/Darp.Results/issues/2)) ([f235573](https://github.com/rosslight/Darp.Results/commit/f23557338b698971dc97b7cd2ed395de55943dba))
+
 ## [1.3.0](https://github.com/rosslight/Darp.Results/compare/v1.2.0...v1.3.0) (2025-12-15)
 
 
