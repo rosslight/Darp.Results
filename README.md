@@ -209,6 +209,9 @@ result.ShouldHaveValue(value => value.ShouldBeGreaterThan(0));
 result.ShouldBeError();
 result.ShouldHaveError(expectedError);
 result.ShouldHaveError(error => error.ShouldNotBeNull());
+
+// Assert async results
+int value = await resultTask.ShouldBeSuccess();
 ```
 
 ## Examples

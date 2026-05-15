@@ -26,6 +26,22 @@ public static class ShouldlyResultExtensions
         );
     }
 
+    /// <summary>Awaits and asserts Success; on failure includes the error string.</summary>
+    /// <param name="resultTask"> The task producing the result to assert. </param>
+    /// <param name="customMessage"> The custom message to include in the assertion. </param>
+    /// <typeparam name="TValue"> The type of the value. </typeparam>
+    /// <typeparam name="TError"> The type of the error. </typeparam>
+    /// <returns> The value of the result. </returns>
+    public static async Task<TValue> ShouldBeSuccess<TValue, TError>(
+        this Task<Result<TValue, TError>> resultTask,
+        string? customMessage = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(resultTask);
+        Result<TValue, TError> result = await resultTask.ConfigureAwait(false);
+        return result.ShouldBeSuccess(customMessage);
+    }
+
     /// <summary>Asserts Success and the Value equals expected; on failure includes the error string.</summary>
     /// <param name="result"> The result to assert. </param>
     /// <param name="expected"> The expected value. </param>
@@ -42,6 +58,24 @@ public static class ShouldlyResultExtensions
         TValue value = result.ShouldBeSuccess(customMessage);
         value.ShouldBe(expected, customMessage);
         return value;
+    }
+
+    /// <summary>Awaits and asserts Success and the Value equals expected; on failure includes the error string.</summary>
+    /// <param name="resultTask"> The task producing the result to assert. </param>
+    /// <param name="expected"> The expected value. </param>
+    /// <param name="customMessage"> The custom message to include in the assertion. </param>
+    /// <typeparam name="TValue"> The type of the value. </typeparam>
+    /// <typeparam name="TError"> The type of the error. </typeparam>
+    /// <returns> The value of the result. </returns>
+    public static async Task<TValue> ShouldHaveValue<TValue, TError>(
+        this Task<Result<TValue, TError>> resultTask,
+        TValue expected,
+        string? customMessage = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(resultTask);
+        Result<TValue, TError> result = await resultTask.ConfigureAwait(false);
+        return result.ShouldHaveValue(expected, customMessage);
     }
 
     /// <summary>Asserts Success, then runs additional checks on Value; on failure includes the error string.</summary>
@@ -63,6 +97,24 @@ public static class ShouldlyResultExtensions
         return value;
     }
 
+    /// <summary>Awaits and asserts Success, then runs additional checks on Value; on failure includes the error string.</summary>
+    /// <param name="resultTask"> The task producing the result to assert. </param>
+    /// <param name="assertions"> The assertions to run on the value. </param>
+    /// <param name="customMessage"> The custom message to include in the assertion. </param>
+    /// <typeparam name="TValue"> The type of the value. </typeparam>
+    /// <typeparam name="TError"> The type of the error. </typeparam>
+    /// <returns> The value of the result. </returns>
+    public static async Task<TValue> ShouldHaveValue<TValue, TError>(
+        this Task<Result<TValue, TError>> resultTask,
+        Action<TValue> assertions,
+        string? customMessage = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(resultTask);
+        Result<TValue, TError> result = await resultTask.ConfigureAwait(false);
+        return result.ShouldHaveValue(assertions, customMessage);
+    }
+
     /// <summary>Asserts Error; if it was Success, includes the value string.</summary>
     /// <param name="result"> The result to assert. </param>
     /// <param name="customMessage"> The custom message to include in the assertion. </param>
@@ -79,6 +131,22 @@ public static class ShouldlyResultExtensions
         throw new ShouldAssertException(
             customMessage ?? $"Expected result to be Error, but it was Success with value: {val}"
         );
+    }
+
+    /// <summary>Awaits and asserts Error; if it was Success, includes the value string.</summary>
+    /// <param name="resultTask"> The task producing the result to assert. </param>
+    /// <param name="customMessage"> The custom message to include in the assertion. </param>
+    /// <typeparam name="TValue"> The type of the value. </typeparam>
+    /// <typeparam name="TError"> The type of the error. </typeparam>
+    /// <returns> The error of the result. </returns>
+    public static async Task<TError> ShouldBeError<TValue, TError>(
+        this Task<Result<TValue, TError>> resultTask,
+        string? customMessage = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(resultTask);
+        Result<TValue, TError> result = await resultTask.ConfigureAwait(false);
+        return result.ShouldBeError(customMessage);
     }
 
     /// <summary>Asserts Error equals expected; if it was Success, includes the value string.</summary>
@@ -99,6 +167,24 @@ public static class ShouldlyResultExtensions
         return error;
     }
 
+    /// <summary>Awaits and asserts Error equals expected; if it was Success, includes the value string.</summary>
+    /// <param name="resultTask"> The task producing the result to assert. </param>
+    /// <param name="expected"> The expected error. </param>
+    /// <param name="customMessage"> The custom message to include in the assertion. </param>
+    /// <typeparam name="TValue"> The type of the value. </typeparam>
+    /// <typeparam name="TError"> The type of the error. </typeparam>
+    /// <returns> The error of the result. </returns>
+    public static async Task<TError> ShouldHaveError<TValue, TError>(
+        this Task<Result<TValue, TError>> resultTask,
+        TError expected,
+        string? customMessage = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(resultTask);
+        Result<TValue, TError> result = await resultTask.ConfigureAwait(false);
+        return result.ShouldHaveError(expected, customMessage);
+    }
+
     /// <summary>Asserts Error, then runs additional checks on Error; if it was Success, includes the value string.</summary>
     /// <param name="result"> The result to assert. </param>
     /// <param name="assertions"> The assertions to run on the error. </param>
@@ -116,6 +202,24 @@ public static class ShouldlyResultExtensions
         TError error = result.ShouldBeError(customMessage);
         assertions(error);
         return error;
+    }
+
+    /// <summary>Awaits and asserts Error, then runs additional checks on Error; if it was Success, includes the value string.</summary>
+    /// <param name="resultTask"> The task producing the result to assert. </param>
+    /// <param name="assertions"> The assertions to run on the error. </param>
+    /// <param name="customMessage"> The custom message to include in the assertion. </param>
+    /// <typeparam name="TValue"> The type of the value. </typeparam>
+    /// <typeparam name="TError"> The type of the error. </typeparam>
+    /// <returns> The error of the result. </returns>
+    public static async Task<TError> ShouldHaveError<TValue, TError>(
+        this Task<Result<TValue, TError>> resultTask,
+        Action<TError> assertions,
+        string? customMessage = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(resultTask);
+        Result<TValue, TError> result = await resultTask.ConfigureAwait(false);
+        return result.ShouldHaveError(assertions, customMessage);
     }
 
     // ---- helpers ----
