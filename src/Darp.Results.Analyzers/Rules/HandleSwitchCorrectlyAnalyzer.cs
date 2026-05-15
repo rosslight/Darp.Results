@@ -38,7 +38,7 @@ public sealed class HandleSwitchCorrectlyAnalyzer : DiagnosticAnalyzer
 
         // Only continue running of the type is an analyzer
         ITypeSymbol? resultType = expression.Value.Type;
-        if (!resultType.IsOrExtendsResult())
+        if (!resultType.IsResult())
             return;
 
         // Nothing to do if all cases are covered

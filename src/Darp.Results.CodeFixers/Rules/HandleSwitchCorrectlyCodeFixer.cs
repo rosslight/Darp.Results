@@ -97,7 +97,7 @@ public sealed class HandleSwitchCorrectlyCodeFixer : CodeFixProvider
                 return false;
             var declarationType =
                 model.GetSymbolInfo(declarationPatternSyntax.Type, cancellationToken).Symbol as ITypeSymbol;
-            return declarationType?.BaseType.IsOrExtendsResult() is true
+            return declarationType?.BaseType.IsResult() is true
                 && declarationType.IsErrorResult(declarationType.BaseType);
         }
     }
