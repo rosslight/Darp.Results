@@ -144,7 +144,7 @@ partial class Result<TValue, TError>
     /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap"/>
     [Pure]
     [EditorBrowsable(EditorBrowsableState.Advanced)]
-    public TValue Unwrap() => Expect("Could not unwrap value. Result is not a success");
+    public TValue Unwrap() => Expect("Called Result.Unwrap() on an Err value");
 
     /// <summary> Returns the <see cref="Result.Ok{TValue,TError}.Value"/> or a default value if the result is an error. </summary>
     /// <param name="defaultValue"> The default value to return if the result is an error. </param>
@@ -176,7 +176,7 @@ partial class Result<TValue, TError>
     /// <seealso href="https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap_err"/>
     [Pure]
     [EditorBrowsable(EditorBrowsableState.Advanced)]
-    public TError UnwrapError() => ExpectError("Could not unwrap error. Result is not a error");
+    public TError UnwrapError() => ExpectError("Called Result.UnwrapError() on an Ok value");
 
     /// <summary> Returns the <see cref="Result.Ok{TValue,TError}.Value"/> with a custom message. Prefer non-throwing alternatives </summary>
     /// <returns> The underlying value, if in <see cref="Result.Ok{TValue,TError}"/> state </returns>
@@ -185,7 +185,9 @@ partial class Result<TValue, TError>
     [Pure]
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     public TValue Expect(string message) =>
-        TryGetValue(out TValue? value) ? value : throw new InvalidOperationException(message);
+        TryGetValue(out TValue? value, out Err<TValue, TError>? err)
+            ? value
+            : throw CreateInvalidOperationException(message, err.Error);
 
     /// <summary> Returns the <see cref="Result.Err{TValue,TError}.Error"/> with a custom message </summary>
     /// <returns> The underlying error, if in <see cref="Result.Err{TValue,TError}"/> state </returns>
@@ -194,5 +196,26 @@ partial class Result<TValue, TError>
     [Pure]
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     public TError ExpectError(string message) =>
-        TryGetError(out TError? error) ? error : throw new InvalidOperationException(message);
+        TryGetError(out TError? error, out Ok<TValue, TError>? ok)
+            ? error
+            : throw CreateInvalidOperationException(message, ok.Value);
+
+    private static InvalidOperationException CreateInvalidOperationException<TUnexpected>(
+        string message,
+        TUnexpected unexpected
+    ) => new($"{message}: {FormatUnexpectedValue(unexpected)}");
+
+    private static string FormatUnexpectedValue<TUnexpected>(TUnexpected unexpected)
+    {
+        if (unexpected is null)
+            return "<null>";
+        try
+        {
+            return unexpected.ToString() ?? "<null>";
+        }
+        catch (Exception ex)
+        {
+            return $"<{unexpected.GetType().FullName}.ToString() threw {ex.GetType().FullName}>";
+        }
+    }
 }

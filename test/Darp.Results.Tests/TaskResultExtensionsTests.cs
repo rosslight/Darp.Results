@@ -233,7 +233,8 @@ public sealed class TaskResultExtensionsTests
     {
         var task = Task.FromResult<Result<int, Error>>(Error.Error1);
 
-        await Should.ThrowAsync<InvalidOperationException>(() => task.Unwrap());
+        InvalidOperationException ex = await Should.ThrowAsync<InvalidOperationException>(() => task.Unwrap());
+        ex.Message.ShouldBe("Called Result.Unwrap() on an Err value: Error1");
     }
 
     [Fact]
@@ -285,7 +286,8 @@ public sealed class TaskResultExtensionsTests
     {
         var task = Task.FromResult<Result<int, Error>>(7);
 
-        await Should.ThrowAsync<InvalidOperationException>(() => task.UnwrapError());
+        InvalidOperationException ex = await Should.ThrowAsync<InvalidOperationException>(() => task.UnwrapError());
+        ex.Message.ShouldBe("Called Result.UnwrapError() on an Ok value: 7");
     }
 
     [Fact]
@@ -305,7 +307,7 @@ public sealed class TaskResultExtensionsTests
         const string message = "boom";
 
         InvalidOperationException ex = await Should.ThrowAsync<InvalidOperationException>(() => task.Expect(message));
-        ex.Message.ShouldBe(message);
+        ex.Message.ShouldBe("boom: Error1");
     }
 
     [Fact]
@@ -327,6 +329,6 @@ public sealed class TaskResultExtensionsTests
         InvalidOperationException ex = await Should.ThrowAsync<InvalidOperationException>(() =>
             task.ExpectError(message)
         );
-        ex.Message.ShouldBe(message);
+        ex.Message.ShouldBe("wrong state: 42");
     }
 }

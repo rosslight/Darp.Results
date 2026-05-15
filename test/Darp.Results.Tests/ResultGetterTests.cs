@@ -38,7 +38,8 @@ public sealed class ResultGetterTests
     public void Unwrap_Err_Throws()
     {
         Result<int, Error> result = Error.Error1;
-        Should.Throw<InvalidOperationException>(() => _ = result.Unwrap());
+        InvalidOperationException ex = Should.Throw<InvalidOperationException>(() => _ = result.Unwrap());
+        ex.Message.ShouldBe("Called Result.Unwrap() on an Err value: Error1");
     }
 
     [Fact]
@@ -74,7 +75,29 @@ public sealed class ResultGetterTests
     {
         Result<int, Error> result = Error.Error1;
         InvalidOperationException ex = Should.Throw<InvalidOperationException>(() => _ = result.Expect("custom"));
-        ex.Message.ShouldBe("custom");
+        ex.Message.ShouldBe("custom: Error1");
+    }
+
+    [Fact]
+    public void Expect_ErrWithNullError_ThrowsWithNullPayload()
+    {
+        Result<int, string?> result = new Err<int, string?>(null);
+
+        InvalidOperationException ex = Should.Throw<InvalidOperationException>(() => _ = result.Expect("custom"));
+
+        ex.Message.ShouldBe("custom: <null>");
+    }
+
+    [Fact]
+    public void Expect_ErrWithThrowingToString_ThrowsWithFallbackPayload()
+    {
+        Result<int, ThrowingToString> result = new Err<int, ThrowingToString>(new ThrowingToString());
+
+        InvalidOperationException ex = Should.Throw<InvalidOperationException>(() => _ = result.Expect("custom"));
+
+        ex.Message.ShouldBe(
+            "custom: <Darp.Results.Tests.ResultGetterTests+ThrowingToString.ToString() threw System.InvalidOperationException>"
+        );
     }
 
     [Fact]
@@ -89,7 +112,8 @@ public sealed class ResultGetterTests
     public void UnwrapError_Ok_Throws()
     {
         Result<int, Error> result = 1;
-        Should.Throw<InvalidOperationException>(() => _ = result.UnwrapError());
+        InvalidOperationException ex = Should.Throw<InvalidOperationException>(() => _ = result.UnwrapError());
+        ex.Message.ShouldBe("Called Result.UnwrapError() on an Ok value: 1");
     }
 
     [Fact]
@@ -97,7 +121,17 @@ public sealed class ResultGetterTests
     {
         Result<int, Error> result = 1;
         InvalidOperationException ex = Should.Throw<InvalidOperationException>(() => _ = result.ExpectError("err-msg"));
-        ex.Message.ShouldBe("err-msg");
+        ex.Message.ShouldBe("err-msg: 1");
+    }
+
+    [Fact]
+    public void ExpectError_OkWithNullValue_ThrowsWithNullPayload()
+    {
+        Result<string?, Error> result = new Ok<string?, Error>(null);
+
+        InvalidOperationException ex = Should.Throw<InvalidOperationException>(() => _ = result.ExpectError("err-msg"));
+
+        ex.Message.ShouldBe("err-msg: <null>");
     }
 
     [Fact]
@@ -130,5 +164,10 @@ public sealed class ResultGetterTests
         Result<string, Error> result = Error.Error2;
         string? value = result.UnwrapOrDefault();
         value.ShouldBeNull();
+    }
+
+    private sealed class ThrowingToString
+    {
+        public override string ToString() => throw new InvalidOperationException();
     }
 }
