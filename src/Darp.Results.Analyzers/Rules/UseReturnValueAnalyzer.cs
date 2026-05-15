@@ -28,21 +28,66 @@ public sealed class ResultReturnValueUsedAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(AnalyzeOperation, OperationKind.Invocation);
+        context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
+        context.RegisterOperationAction(AnalyzeAwait, OperationKind.Await);
     }
 
-    private static void AnalyzeOperation(OperationAnalysisContext context)
+    private static void AnalyzeInvocation(OperationAnalysisContext context)
     {
         var invocation = (IInvocationOperation)context.Operation;
         ITypeSymbol? returnType = invocation.Type;
-        if (!returnType.IsOrExtendsResult(out bool isTask))
+        if (!returnType.IsResult())
             return;
-        if (!invocation.IsUnused(isTask, countDiscardsAsUnused: false))
+        if (!IsExpressionStatementAfterConversions(invocation))
             return;
-        // Build a helpful diagnostic.
-        string methodName = invocation.TargetMethod.Name;
+        ReportDiagnostic(context, invocation, invocation.TargetMethod.Name);
+    }
 
-        var diagnostic = Diagnostic.Create(s_rule, invocation.Syntax.GetLocation(), methodName);
+    private static void AnalyzeAwait(OperationAnalysisContext context)
+    {
+        var awaitOperation = (IAwaitOperation)context.Operation;
+        if (!awaitOperation.Type.IsResult())
+            return;
+        if (!IsExpressionStatementAfterConversions(awaitOperation))
+            return;
+
+        IOperation awaitedOperation = StripImplicitConversions(awaitOperation.Operation);
+        string expressionName = GetAwaitedExpressionName(awaitedOperation);
+        ReportDiagnostic(context, awaitedOperation, expressionName);
+    }
+
+    private static bool IsExpressionStatementAfterConversions(IOperation operation)
+    {
+        IOperation node = operation;
+        while (node.Parent is IConversionOperation { IsImplicit: true } conversion)
+            node = conversion;
+
+        return node.Parent is IExpressionStatementOperation;
+    }
+
+    private static IOperation StripImplicitConversions(IOperation operation)
+    {
+        while (operation is IConversionOperation { IsImplicit: true } conversion)
+            operation = conversion.Operand;
+
+        return operation;
+    }
+
+    private static string GetAwaitedExpressionName(IOperation operation)
+    {
+        return operation switch
+        {
+            IInvocationOperation invocation => invocation.TargetMethod.Name,
+            IPropertyReferenceOperation property => property.Property.Name,
+            IObjectCreationOperation creation => creation.Constructor?.ContainingType.Name ?? "await expression",
+            ILocalReferenceOperation local => local.Local.Name,
+            _ => "await expression",
+        };
+    }
+
+    private static void ReportDiagnostic(OperationAnalysisContext context, IOperation operation, string expressionName)
+    {
+        var diagnostic = Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), expressionName);
         context.ReportDiagnostic(diagnostic);
     }
 }

@@ -35,7 +35,7 @@ public sealed class SuppressExistingEnumAnalysisSuppressor : DiagnosticSuppresso
             if (node is not SwitchExpressionSyntax expression)
                 continue;
             ITypeSymbol? typeInfo = model.GetTypeInfo(expression.GoverningExpression, context.CancellationToken).Type;
-            if (!typeInfo.IsOrExtendsResult())
+            if (!typeInfo.IsResult())
                 continue;
             context.ReportSuppression(Suppression.Create(s_descriptor, diagnostic));
         }
