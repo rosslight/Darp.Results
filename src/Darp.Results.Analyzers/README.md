@@ -6,16 +6,17 @@ Roslyn analyzers and code fixers for the Darp.Results library to help developers
 
 The Darp.Results.Analyzers package provides static analysis tools that integrate with Visual Studio, VS Code, and other IDEs to:
 
-- Detect unused Result return values - Warn when Result return values are ignored
-- Ensure complete switch expressions - Require handling of both Ok and Err cases
-- Suppress conflicting diagnostics - Hide redundant compiler warnings for Result types
+- Detect unused `Result<TValue, TError>` return values
+- Detect ignored awaited expressions that produce a `Result<TValue, TError>`
+- Require switch expressions on results to cover both `Ok` and `Err` cases
+- Suppress redundant compiler exhaustiveness warnings for result switch expressions
 
 ## Installation
 
 Add the analyzer package to your project:
 
 ```xml
-<PackageReference Include="Darp.Results.Analyzers" Version="1.0.0" />
+<PackageReference Include="Darp.Results.Analyzers" Version="1.4.0" />
 ```
 
 The analyzers will automatically activate in your IDE and during build.
@@ -26,6 +27,12 @@ The analyzers will automatically activate in your IDE and during build.
 |--------------------------|-------------------------------|----------|-------------------------------------------------------|
 | [DR0001](docs/DR0001.md) | Use return value              | Warning  | Result return values should be checked                |
 | [DR0002](docs/DR0002.md) | Switch expression missing arm | Error    | Switch expressions on Result should handle both cases |
+
+## Suppressors
+
+| ID     | Suppressed diagnostic | Description                                      |
+|--------|-----------------------|--------------------------------------------------|
+| DR0003 | CS8509                | Result switch exhaustiveness is covered by DR0002 |
 
 ## .editorconfig - default values
 
