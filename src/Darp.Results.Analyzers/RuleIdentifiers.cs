@@ -12,7 +12,7 @@ internal static class RuleIdentifiers
     {
         return string.Format(
             CultureInfo.InvariantCulture,
-            "https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/{0}.md",
+            "https://github.com/rosslight/Darp.Results/blob/main/src/Darp.Results.Analyzers/docs/{0}.md",
             identifier
         );
     }

@@ -4,11 +4,15 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
+using Xunit;
 
 namespace Darp.Results.Analyzers.Tests;
 
 public static class ResultHelpers
 {
+    private const string DocsBaseUrl =
+        "https://github.com/rosslight/Darp.Results/blob/main/src/Darp.Results.Analyzers/docs/";
+
     private static string InMethod(string body)
     {
         return $$"""
@@ -50,6 +54,22 @@ public static class ResultHelpers
             {{classBody}}
             }
             """;
+    }
+
+    private static string NormalizeLineEndings(string text)
+    {
+        return text.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", Environment.NewLine);
+    }
+
+    public static void VerifyHelpLink<TAnalyzer>(string diagnosticId)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+    {
+        DiagnosticDescriptor descriptor = Assert.Single(
+            new TAnalyzer().SupportedDiagnostics,
+            descriptor => descriptor.Id == diagnosticId
+        );
+
+        Assert.Equal($"{DocsBaseUrl}{diagnosticId}.md", descriptor.HelpLinkUri);
     }
 
     public static Task VerifyInMethodAsync<TAnalyzer>(string methodBody, params DiagnosticResult[] expected)
@@ -130,8 +150,8 @@ public static class ResultHelpers
     {
         var test = new CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>
         {
-            TestCode = InMethod(source),
-            FixedCode = InMethod(fixedSource),
+            TestCode = NormalizeLineEndings(InMethod(source)),
+            FixedCode = NormalizeLineEndings(InMethod(fixedSource)),
         };
         test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(Result<,>).Assembly.Location));
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;

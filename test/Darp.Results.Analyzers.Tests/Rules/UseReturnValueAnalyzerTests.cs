@@ -12,6 +12,12 @@ namespace Darp.Results.Analyzers.Tests.Rules;
 public sealed class ResultReturnValueUsedAnalyzerTests
 {
     [Fact]
+    public void HelpLink_ShouldBeCorrect()
+    {
+        ResultHelpers.VerifyHelpLink<ResultReturnValueUsedAnalyzer>("DR0001");
+    }
+
+    [Fact]
     public async Task Discard_ShouldNotWarn()
     {
         const string text = """

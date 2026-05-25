@@ -13,6 +13,12 @@ namespace Darp.Results.Analyzers.Tests.Rules;
 public sealed class HandleSwitchCorrectlyAnalyzerTests
 {
     [Fact]
+    public void HelpLink_ShouldBeCorrect()
+    {
+        ResultHelpers.VerifyHelpLink<HandleSwitchCorrectlyAnalyzer>("DR0002");
+    }
+
+    [Fact]
     public async Task CompleteSwitch_ShouldNotError()
     {
         const string text = """
