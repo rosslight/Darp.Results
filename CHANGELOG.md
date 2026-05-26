@@ -4,6 +4,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Content is taken from conventional commits and aggregated in a [release-please](https://github.com/googleapis/release-please) PR.
 
+## [1.4.1](https://github.com/rosslight/Darp.Results/compare/v1.4.0...v1.4.1) (2026-05-25)
+
+
+### Bug Fixes
+
+* HelpUri now points to our repository ([d754969](https://github.com/rosslight/Darp.Results/commit/d7549699771bf4eac625cfd69ab5ebb8018e5c70))
+
 ## [1.4.0](https://github.com/rosslight/Darp.Results/compare/v1.3.0...v1.4.0) (2026-05-15)
 
 
