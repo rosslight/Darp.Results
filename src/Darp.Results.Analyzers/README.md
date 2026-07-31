@@ -9,6 +9,7 @@ The Darp.Results.Analyzers package provides static analysis tools that integrate
 - Detect unused `Result<TValue, TError>` return values
 - Detect ignored awaited expressions that produce a `Result<TValue, TError>`
 - Require switch expressions on results to cover both `Ok` and `Err` cases
+- Detect known exceptions that can escape Result-returning functions
 - Suppress redundant compiler exhaustiveness warnings for result switch expressions
 
 ## Installation
@@ -27,6 +28,7 @@ The analyzers will automatically activate in your IDE and during build.
 |--------------------------|-------------------------------|----------|-------------------------------------------------------|
 | [DR0001](docs/DR0001.md) | Use return value              | Warning  | Result return values should be checked                |
 | [DR0002](docs/DR0002.md) | Switch expression missing arm | Error    | Switch expressions on Result should handle both cases |
+| [DR0004](docs/DR0004.md) | Known exception may escape    | Warning  | Known exceptions should use the Result error channel  |
 
 ## Suppressors
 
@@ -42,4 +44,7 @@ dotnet_diagnostic.DR0001.severity = warning
 
 # DR0002: Switch expression missing arm
 dotnet_diagnostic.DR0002.severity = error
+
+# DR0004: Known exception may escape
+dotnet_diagnostic.DR0004.severity = warning
 ```

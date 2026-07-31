@@ -1,0 +1,15 @@
+<Project>
+  <Target
+    Name="DarpResultsAddReferenceDocumentationFiles"
+    BeforeTargets="CoreCompile"
+    DependsOnTargets="ResolveReferences"
+  >
+    <ItemGroup>
+      <_DarpResultsReferenceDocumentation
+        Include="@(ReferencePath->'%(RootDir)%(Directory)%(Filename).xml')"
+        Condition="Exists('%(ReferencePath.RootDir)%(ReferencePath.Directory)%(ReferencePath.Filename).xml')"
+      />
+      <AdditionalFiles Include="@(_DarpResultsReferenceDocumentation)" />
+    </ItemGroup>
+  </Target>
+</Project>

@@ -26,6 +26,19 @@ internal static class Helpers
             && containingNamespace.ToDisplayString() == ResultNamespace;
     }
 
+    public static bool IsResultReturningType(this ITypeSymbol? type)
+    {
+        if (type.IsResult())
+            return true;
+        if (type is not INamedTypeSymbol { Arity: 1 } named)
+            return false;
+        if (named.ContainingNamespace?.ToDisplayString() != "System.Threading.Tasks")
+            return false;
+        if (named.OriginalDefinition.Name is not ("Task" or "ValueTask"))
+            return false;
+        return named.TypeArguments[0].IsResult();
+    }
+
     public static bool IsErrorResult([NotNullWhen(true)] this ITypeSymbol? type, ITypeSymbol resultType)
     {
         if (type is not { Name: ResultErrName })
