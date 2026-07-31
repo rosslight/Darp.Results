@@ -303,6 +303,108 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
     }
 
     [Fact]
+    public async Task TaskCreatedInsideTryButAwaitedOutside_ShouldWarn()
+    {
+        const string source = """
+            using Darp.Results;
+            using System.IO;
+            using System.Threading.Tasks;
+
+            static class Dependency
+            {
+                /// <exception cref="IOException">Reading failed.</exception>
+                internal static Task<int> ReadAsync() => Task.FromResult(0);
+            }
+
+            static class TestClass
+            {
+                static async Task<Result<int, string>> Run()
+                {
+                    Task<int> task;
+                    try
+                    {
+                        task = {|DR0004:Dependency.ReadAsync()|};
+                    }
+                    catch (IOException)
+                    {
+                        return "read error";
+                    }
+
+                    return await task;
+                }
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
+    public async Task TaskDirectlyAwaitedInsideTry_ShouldNotWarn()
+    {
+        const string source = """
+            using Darp.Results;
+            using System.IO;
+            using System.Threading.Tasks;
+
+            static class Dependency
+            {
+                /// <exception cref="IOException">Reading failed.</exception>
+                internal static Task<int> ReadAsync() => Task.FromResult(0);
+            }
+
+            static class TestClass
+            {
+                static async Task<Result<int, string>> Run()
+                {
+                    try
+                    {
+                        return await Dependency.ReadAsync();
+                    }
+                    catch (IOException)
+                    {
+                        return "read error";
+                    }
+                }
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
+    public async Task TaskDirectlyAwaitedWithConfigureAwaitInsideTry_ShouldNotWarn()
+    {
+        const string source = """
+            using Darp.Results;
+            using System.IO;
+            using System.Threading.Tasks;
+
+            static class Dependency
+            {
+                /// <exception cref="IOException">Reading failed.</exception>
+                internal static Task<int> ReadAsync() => Task.FromResult(0);
+            }
+
+            static class TestClass
+            {
+                static async Task<Result<int, string>> Run()
+                {
+                    try
+                    {
+                        return await Dependency.ReadAsync().ConfigureAwait(false);
+                    }
+                    catch (IOException)
+                    {
+                        return "read error";
+                    }
+                }
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
     public async Task ExceptionFromReferencedAssemblyDocumentationAdditionalFile_ShouldWarn()
     {
         const string source = """
@@ -363,6 +465,49 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
         test.TestState.AdditionalFiles.Add(
             (Path.ChangeExtension(typeof(Result<,>).Assembly.Location, ".xml"), documentation)
         );
+        await test.RunAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ExceptionFromReferencedGenericExtensionDocumentationAdditionalFile_ShouldWarn()
+    {
+        const string dependencySource = """
+            namespace Dependency;
+
+            public sealed class Values<T> { }
+
+            public static class Extensions
+            {
+                public static T First<T>(this Values<T> values) => default(T);
+            }
+            """;
+        const string source = """
+            using Darp.Results;
+            using Dependency;
+
+            static class TestClass
+            {
+                static Result<int, string> Run(Values<int> values) => {|DR0004:values.First()|};
+            }
+            """;
+        const string documentation = """
+            <?xml version="1.0"?>
+            <doc>
+              <assembly>
+                <name>Dependency</name>
+              </assembly>
+              <members>
+                <member name="M:Dependency.Extensions.First``1(Dependency.Values{``0})">
+                  <exception cref="T:System.InvalidOperationException">The sequence is empty.</exception>
+                </member>
+              </members>
+            </doc>
+            """;
+
+        var test = new ResultAnalyzerTest<KnownExceptionMayEscapeAnalyzer> { TestCode = source };
+        test.TestState.AdditionalProjects["Dependency"].Sources.Add(dependencySource);
+        test.TestState.AdditionalProjectReferences.Add("Dependency");
+        test.TestState.AdditionalFiles.Add(("Dependency.xml", documentation));
         await test.RunAsync(CancellationToken.None);
     }
 

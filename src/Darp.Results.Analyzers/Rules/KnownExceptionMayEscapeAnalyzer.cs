@@ -90,7 +90,10 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
 
         var operation = (IThrowOperation)context.Operation;
         INamedTypeSymbol? exceptionType = GetThrownExceptionType(operation, state.Compilation);
-        if (exceptionType is null || IsPermitted(context, state, containingFunction, exceptionType))
+        if (
+            exceptionType is null
+            || IsPermitted(context, state, containingFunction, exceptionType, context.Operation)
+        )
             return;
 
         ReportDiagnostic(context, operation, [exceptionType]);
@@ -112,10 +115,11 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
         if (documentedExceptions.IsDefaultOrEmpty)
             return;
 
+        IOperation? catchSite = GetCatchSite(context.Operation, invokedMember);
         var escapingExceptions = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
         foreach (INamedTypeSymbol exceptionType in documentedExceptions)
         {
-            if (!IsPermitted(context, state, containingFunction, exceptionType))
+            if (!IsPermitted(context, state, containingFunction, exceptionType, catchSite))
                 escapingExceptions.Add(exceptionType);
         }
 
@@ -165,7 +169,8 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
         OperationAnalysisContext context,
         AnalyzerState state,
         IMethodSymbol containingFunction,
-        INamedTypeSymbol exceptionType
+        INamedTypeSymbol exceptionType,
+        IOperation? catchSite
     )
     {
         ImmutableArray<INamedTypeSymbol> configuredAllowedExceptions = state.GetConfiguredAllowedExceptions(
@@ -179,7 +184,36 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
         if (IsCoveredBy(exceptionType, state.GetDocumentedExceptions(documentationOwner)))
             return true;
 
-        return IsCaught(context.Operation, exceptionType, state.Compilation);
+        return catchSite is not null && IsCaught(catchSite, exceptionType, state.Compilation);
+    }
+
+    private static IOperation? GetCatchSite(IOperation operation, ISymbol invokedMember)
+    {
+        if (invokedMember is not IMethodSymbol method || !method.ReturnType.IsTaskLike())
+            return operation;
+
+        IOperation current = operation;
+        while (current.Parent is { } parent)
+        {
+            switch (parent)
+            {
+                case IConversionOperation { IsImplicit: true }:
+                case IParenthesizedOperation:
+                    current = parent;
+                    continue;
+                case IInvocationOperation configureAwait
+                    when ReferenceEquals(configureAwait.Instance, current)
+                        && configureAwait.TargetMethod.Name == "ConfigureAwait"
+                        && configureAwait.TargetMethod.ContainingType.IsTaskLike():
+                    current = configureAwait;
+                    continue;
+                case IAwaitOperation awaitOperation:
+                    return awaitOperation;
+                default:
+                    return null;
+            }
+        }
+        return null;
     }
 
     private static ISymbol GetDocumentationOwner(ISymbol symbol)
@@ -471,7 +505,11 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
             {
                 case IMethodSymbol method:
                     if (method.ReducedFrom is { } reducedFrom)
+                    {
                         yield return reducedFrom;
+                        if (!SymbolEqualityComparer.Default.Equals(reducedFrom, reducedFrom.OriginalDefinition))
+                            yield return reducedFrom.OriginalDefinition;
+                    }
                     if (!SymbolEqualityComparer.Default.Equals(method, method.OriginalDefinition))
                         yield return method.OriginalDefinition;
                     for (IMethodSymbol? overridden = method.OverriddenMethod; overridden is not null; overridden = overridden.OverriddenMethod)
