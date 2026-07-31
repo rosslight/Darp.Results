@@ -4,18 +4,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Content is taken from conventional commits and aggregated in a [release-please](https://github.com/googleapis/release-please) PR.
 
-## [1.5.0](https://github.com/rosslight/Darp.Results/compare/v1.4.1...v1.5.0) (2026-07-31)
-
-
-### Features
-
-* **shouldly:** add ValueTask result assertions ([#22](https://github.com/rosslight/Darp.Results/issues/22)) ([70c9ef1](https://github.com/rosslight/Darp.Results/commit/70c9ef1462022b9d043573e481fdb66eba456ffd))
-
-
-### Bug Fixes
-
-* add grouping to dependabot ([3e45474](https://github.com/rosslight/Darp.Results/commit/3e454746f46cd2cf3e7e27228c4aee4c09add0d6))
-
 ## [1.4.1](https://github.com/rosslight/Darp.Results/compare/v1.4.0...v1.4.1) (2026-05-25)
 
 
