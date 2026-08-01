@@ -304,6 +304,28 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
     }
 
     [Fact]
+    public async Task DocumentedPropertyInsideNameof_ShouldNotWarn()
+    {
+        const string source = """
+            using Darp.Results;
+            using System.IO;
+
+            sealed class Dependency
+            {
+                /// <exception cref="IOException">Reading failed.</exception>
+                internal int Value => 0;
+            }
+
+            static class TestClass
+            {
+                static Result<string, int> Run(Dependency dependency) => nameof(dependency.Value);
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
     public async Task TaskCreatedInsideTryButAwaitedOutside_ShouldWarn()
     {
         const string source = """
@@ -845,6 +867,35 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
 
             [*.cs]
             dotnet_diagnostic.DR0004.allowed_exception_types = System.Exception
+            """;
+
+        await VerifyAsync(source, editorConfig);
+    }
+
+    [Fact]
+    public async Task ConfiguredNestedException_ShouldUseCSharpTypeName()
+    {
+        const string source = """
+            using Darp.Results;
+            using System;
+
+            namespace MyCompany;
+
+            static class Errors
+            {
+                internal sealed class ExpectedException : Exception { }
+            }
+
+            static class TestClass
+            {
+                static Result<int, string> Run() => throw new Errors.ExpectedException();
+            }
+            """;
+        const string editorConfig = """
+            root = true
+
+            [*.cs]
+            dotnet_diagnostic.DR0004.allowed_exception_types = MyCompany.Errors.ExpectedException
             """;
 
         await VerifyAsync(source, editorConfig);

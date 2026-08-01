@@ -83,6 +83,9 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeDocumentedMember(OperationAnalysisContext context, AnalyzerState state)
     {
+        if (IsInsideNameOf(context.Operation))
+            return;
+
         (ISymbol? invokedMember, INamedTypeSymbol? receiverType) = GetInvokedMember(context.Operation);
         if (
             invokedMember is null
@@ -112,6 +115,16 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
 
         if (escapingExceptions.Count > 0)
             ReportDiagnostic(context, context.Operation, escapingExceptions.ToImmutable());
+    }
+
+    private static bool IsInsideNameOf(IOperation operation)
+    {
+        for (IOperation? current = operation.Parent; current is not null; current = current.Parent)
+        {
+            if (current is INameOfOperation)
+                return true;
+        }
+        return false;
     }
 
     private static (ISymbol? Member, INamedTypeSymbol? ReceiverType) GetInvokedMember(IOperation operation)
@@ -441,13 +454,8 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
                     var builder = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
                     foreach (string configuredTypeName in configuredTypeNames)
                     {
-                        string metadataName = configuredTypeName.Trim();
-                        if (metadataName.StartsWith("global::", StringComparison.Ordinal))
-                            metadataName = metadataName.Substring("global::".Length);
-                        if (metadataName.StartsWith("T:", StringComparison.Ordinal))
-                            metadataName = metadataName.Substring("T:".Length);
                         if (
-                            Compilation.GetTypeByMetadataName(metadataName) is { } type
+                            GetConfiguredExceptionType(configuredTypeName) is { } type
                             && _exceptionType is not null
                             && IsSameOrDerivedFrom(type, _exceptionType)
                         )
@@ -458,6 +466,20 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
                     return builder.ToImmutable();
                 }
             );
+        }
+
+        private INamedTypeSymbol? GetConfiguredExceptionType(string configuredTypeName)
+        {
+            string typeName = configuredTypeName.Trim();
+            if (typeName.StartsWith("global::", StringComparison.Ordinal))
+                typeName = typeName.Substring("global::".Length);
+
+            string declarationId = typeName.StartsWith("T:", StringComparison.Ordinal) ? typeName : "T:" + typeName;
+            string metadataName = typeName.StartsWith("T:", StringComparison.Ordinal)
+                ? typeName.Substring("T:".Length)
+                : typeName;
+            return DocumentationCommentId.GetFirstSymbolForDeclarationId(declarationId, Compilation) as INamedTypeSymbol
+                ?? Compilation.GetTypeByMetadataName(metadataName);
         }
 
         private ImmutableArray<INamedTypeSymbol> ReadDeclaredExceptions(ISymbol symbol)
