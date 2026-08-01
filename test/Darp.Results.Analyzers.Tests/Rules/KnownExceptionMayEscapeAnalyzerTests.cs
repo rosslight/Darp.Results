@@ -287,6 +287,159 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
     }
 
     [Fact]
+    public async Task ConstantTrueFilteredCatch_ShouldHandleException()
+    {
+        const string source = """
+            using Darp.Results;
+            using System.IO;
+
+            static class TestClass
+            {
+                static Result<int, string> Run()
+                {
+                    try
+                    {
+                        throw new IOException();
+                    }
+                    catch (IOException) when (true)
+                    {
+                        return "read error";
+                    }
+                }
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
+    public async Task CatchVariableOrTypePattern_ShouldHandleMatchingExceptions()
+    {
+        const string source = """
+            using Darp.Results;
+            using System;
+            using System.IO;
+
+            static class TestClass
+            {
+                static Result<int, string> Read()
+                {
+                    try
+                    {
+                        throw new IOException();
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        return "read error";
+                    }
+                }
+
+                static Result<int, string> Access()
+                {
+                    try
+                    {
+                        throw new UnauthorizedAccessException();
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        return "access error";
+                    }
+                }
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
+    public async Task CatchVariableOrTypePattern_ShouldWarnForUnmatchedException()
+    {
+        const string source = """
+            using Darp.Results;
+            using System;
+            using System.IO;
+
+            static class TestClass
+            {
+                static Result<int, string> Run()
+                {
+                    try
+                    {
+                        {|DR0004:throw new InvalidOperationException();|}
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        return "handled";
+                    }
+                }
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
+    public async Task TypePatternOnOtherVariable_ShouldNotHandleException()
+    {
+        const string source = """
+            using Darp.Results;
+            using System;
+            using System.IO;
+
+            static class TestClass
+            {
+                static Result<int, string> Run(Exception other)
+                {
+                    try
+                    {
+                        {|DR0004:throw new IOException();|}
+                    }
+                    catch (Exception ex) when (other is IOException or UnauthorizedAccessException)
+                    {
+                        return ex.Message;
+                    }
+                }
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
+    public async Task CatchVariableOrTypePattern_ShouldHandleDocumentedExceptions()
+    {
+        const string source = """
+            using Darp.Results;
+            using System;
+            using System.IO;
+
+            static class Dependency
+            {
+                /// <exception cref="IOException">The input cannot be read.</exception>
+                /// <exception cref="UnauthorizedAccessException">Access was denied.</exception>
+                internal static int Read() => 0;
+            }
+
+            static class TestClass
+            {
+                static Result<int, string> Run()
+                {
+                    try
+                    {
+                        return Dependency.Read();
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        return "read error";
+                    }
+                }
+            }
+            """;
+
+        await VerifyDocumentedAsync(source);
+    }
+
+    [Fact]
     public async Task Rethrow_ShouldWarn()
     {
         const string source = """

@@ -374,17 +374,81 @@ internal static class ExceptionEscapeAnalysis
 
             foreach (ICatchClauseOperation catchClause in tryOperation.Catches)
             {
-                if (catchClause.Filter is not null)
-                    continue;
                 INamedTypeSymbol? caughtType =
                     catchClause.ExceptionType as INamedTypeSymbol
                     ?? compilation.GetTypeByMetadataName("System.Exception");
-                if (caughtType is not null && IsSameOrDerivedFrom(exceptionType, caughtType))
+                if (
+                    caughtType is not null
+                    && IsSameOrDerivedFrom(exceptionType, caughtType)
+                    && IsCatchFilterAlwaysTrue(catchClause, exceptionType)
+                )
+                {
                     return true;
+                }
             }
         }
 
         return false;
+    }
+
+    private static bool IsCatchFilterAlwaysTrue(
+        ICatchClauseOperation catchClause,
+        INamedTypeSymbol exceptionType
+    )
+    {
+        if (catchClause.Filter is null)
+            return true;
+        if (catchClause.Filter.ConstantValue is { HasValue: true, Value: true })
+            return true;
+        if (
+            catchClause.Filter is not IIsPatternOperation isPattern
+            || !ReferencesCatchVariable(isPattern.Value, catchClause)
+        )
+        {
+            return false;
+        }
+
+        return IsPatternGuaranteedToMatch(isPattern.Pattern, exceptionType);
+    }
+
+    private static bool ReferencesCatchVariable(IOperation operation, ICatchClauseOperation catchClause)
+    {
+        while (true)
+        {
+            switch (operation)
+            {
+                case IConversionOperation { IsImplicit: true } conversion:
+                    operation = conversion.Operand;
+                    continue;
+                case IParenthesizedOperation parenthesized:
+                    operation = parenthesized.Operand;
+                    continue;
+            }
+
+            break;
+        }
+
+        return operation is ILocalReferenceOperation localReference
+            && catchClause.ExceptionDeclarationOrExpression is IVariableDeclaratorOperation declarator
+            && SymbolEqualityComparer.Default.Equals(localReference.Local, declarator.Symbol);
+    }
+
+    private static bool IsPatternGuaranteedToMatch(
+        IPatternOperation pattern,
+        INamedTypeSymbol exceptionType
+    )
+    {
+        return pattern switch
+        {
+            ITypePatternOperation { MatchedType: INamedTypeSymbol matchedType } =>
+                IsSameOrDerivedFrom(exceptionType, matchedType),
+            IDeclarationPatternOperation { MatchedType: INamedTypeSymbol matchedType } =>
+                IsSameOrDerivedFrom(exceptionType, matchedType),
+            IBinaryPatternOperation { OperatorKind: BinaryOperatorKind.Or } binary =>
+                IsPatternGuaranteedToMatch(binary.LeftPattern, exceptionType)
+                || IsPatternGuaranteedToMatch(binary.RightPattern, exceptionType),
+            _ => false,
+        };
     }
 
     private static bool IsSameOrDerivedFrom(INamedTypeSymbol type, INamedTypeSymbol possibleBaseType)
