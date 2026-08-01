@@ -1,4 +1,13 @@
 <Project>
+  <PropertyGroup>
+    <DarpResultsAnalyzeTestProjects Condition="'$(DarpResultsAnalyzeTestProjects)' == ''"
+      >false</DarpResultsAnalyzeTestProjects>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true' and '$(DarpResultsAnalyzeTestProjects)' != 'true'">
+    <NoWarn>$(NoWarn);DR0004;DR0005</NoWarn>
+  </PropertyGroup>
+
   <Target
     Name="DarpResultsAddReferenceDocumentationFiles"
     BeforeTargets="CoreCompile"

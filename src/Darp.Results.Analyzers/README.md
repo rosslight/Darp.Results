@@ -52,3 +52,11 @@ dotnet_diagnostic.DR0004.severity = warning
 # DR0005: Documented exception may escape
 dotnet_diagnostic.DR0005.severity = warning
 ```
+
+DR0004 and DR0005 are disabled by default in projects where `IsTestProject` is `true`. To analyze exception handling in test projects, opt in through MSBuild:
+
+```xml
+<PropertyGroup>
+  <DarpResultsAnalyzeTestProjects>true</DarpResultsAnalyzeTestProjects>
+</PropertyGroup>
+```
