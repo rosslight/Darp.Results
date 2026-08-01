@@ -4,6 +4,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Content is taken from conventional commits and aggregated in a [release-please](https://github.com/googleapis/release-please) PR.
 
+## [1.8.0](https://github.com/rosslight/Darp.Results/compare/v1.7.0...v1.8.0) (2026-08-01)
+
+
+### Features
+
+* **analyzers:** add DR0005 exclusion code fix ([03a299a](https://github.com/rosslight/Darp.Results/commit/03a299a490b3a213ea497434e15b17c63ab63778))
+
+
+### Bug Fixes
+
+* **analyzers:** recognize exception type filters ([7b0428b](https://github.com/rosslight/Darp.Results/commit/7b0428ba4ed8e93fefda6f42646dec2e5f630d32))
+* **analyzers:** recognize single-type catch filters ([d4c2e0c](https://github.com/rosslight/Darp.Results/commit/d4c2e0c9f35f4d1948befd8a4bcfd162271aa910))
+
 ## [1.7.0](https://github.com/rosslight/Darp.Results/compare/v1.6.0...v1.7.0) (2026-08-01)
 
 
