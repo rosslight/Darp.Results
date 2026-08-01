@@ -512,6 +512,82 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
     }
 
     [Fact]
+    public async Task ImplicitInterfaceException_ShouldPermitImplementationThrow()
+    {
+        const string source = """
+            using Darp.Results;
+            using System.IO;
+
+            interface IReader
+            {
+                /// <exception cref="IOException"></exception>
+                Result<int, string> Read();
+            }
+
+            sealed class Reader : IReader
+            {
+                public Result<int, string> Read() => throw new IOException();
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
+    public async Task ImplicitInterfaceException_ShouldWarnThroughConcreteMethod()
+    {
+        const string source = """
+            using Darp.Results;
+            using System.IO;
+
+            interface IReader
+            {
+                /// <exception cref="IOException"></exception>
+                Result<int, string> Read();
+            }
+
+            sealed class Reader : IReader
+            {
+                public Result<int, string> Read() => 0;
+            }
+
+            static class TestClass
+            {
+                static Result<int, string> Run(Reader reader) => {|DR0004:reader.Read()|};
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
+    public async Task ImplicitInterfaceException_ShouldWarnThroughConcreteProperty()
+    {
+        const string source = """
+            using Darp.Results;
+            using System.IO;
+
+            interface IReader
+            {
+                /// <exception cref="IOException"></exception>
+                Result<int, string> Value { get; }
+            }
+
+            sealed class Reader : IReader
+            {
+                public Result<int, string> Value => 0;
+            }
+
+            static class TestClass
+            {
+                static Result<int, string> Run(Reader reader) => {|DR0004:reader.Value|};
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
     public async Task ConfiguredSystemException_ShouldAllowEveryException()
     {
         const string source = """

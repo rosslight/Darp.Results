@@ -146,8 +146,14 @@ public sealed class DocumentEscapingExceptionsCodeFixer : CodeFixProvider
 
         SourceText text = await document.GetTextAsync(cancellationToken).ConfigureAwait(false);
         string newLine = GetNewLine(text);
-        string indentation = GetIndentation(text, declaration.SpanStart);
-        string documentation = string.Join(
+        TextLine declarationLine = text.Lines.GetLineFromPosition(declaration.SpanStart);
+        string linePrefix = text.ToString(
+            TextSpan.FromBounds(declarationLine.Start, declaration.SpanStart)
+        );
+        bool startsOnOwnLine = linePrefix.All(char.IsWhiteSpace);
+        string indentation = startsOnOwnLine ? linePrefix : string.Empty;
+        string documentation = (startsOnOwnLine ? string.Empty : newLine)
+            + string.Join(
                 newLine + indentation,
                 exceptionsToAdd.Select(exception =>
                     $"/// <exception cref=\"{EscapeXmlAttribute(exception.Cref)}\"></exception>"
@@ -195,12 +201,6 @@ public sealed class DocumentEscapingExceptionsCodeFixer : CodeFixProvider
                 documentationIds.Add(documentationId);
         }
         return documentationIds;
-    }
-
-    private static string GetIndentation(SourceText text, int position)
-    {
-        TextLine line = text.Lines.GetLineFromPosition(position);
-        return text.ToString(TextSpan.FromBounds(line.Start, position));
     }
 
     private static string GetNewLine(SourceText text)

@@ -516,6 +516,8 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
                         yield return overridden;
                     foreach (IMethodSymbol implementation in method.ExplicitInterfaceImplementations)
                         yield return implementation;
+                    foreach (ISymbol contract in GetImplicitInterfaceContracts(method))
+                        yield return contract;
                     break;
                 case IPropertySymbol property:
                     if (!SymbolEqualityComparer.Default.Equals(property, property.OriginalDefinition))
@@ -524,7 +526,24 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
                         yield return overridden;
                     foreach (IPropertySymbol implementation in property.ExplicitInterfaceImplementations)
                         yield return implementation;
+                    foreach (ISymbol contract in GetImplicitInterfaceContracts(property))
+                        yield return contract;
                     break;
+            }
+        }
+
+        private static IEnumerable<ISymbol> GetImplicitInterfaceContracts(ISymbol symbol)
+        {
+            foreach (INamedTypeSymbol interfaceType in symbol.ContainingType.AllInterfaces)
+            {
+                foreach (ISymbol interfaceMember in interfaceType.GetMembers(symbol.Name))
+                {
+                    ISymbol? implementation = symbol.ContainingType.FindImplementationForInterfaceMember(
+                        interfaceMember
+                    );
+                    if (SymbolEqualityComparer.Default.Equals(implementation, symbol))
+                        yield return interfaceMember;
+                }
             }
         }
 

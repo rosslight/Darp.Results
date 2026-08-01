@@ -162,6 +162,28 @@ public sealed class DocumentEscapingExceptionsCodeFixerTests
         await VerifyAsync(source, fixedSource);
     }
 
+    [Fact]
+    public async Task MemberFollowingCodeOnSameLine_ShouldStartDocumentationOnNewLine()
+    {
+        string source = """
+            using Darp.Results;
+            using System.IO;
+
+            static class TestClass { static Result<int, string> Run() => {|DR0004:throw new IOException()|}; }
+            """.ReplaceLineEndings(Environment.NewLine);
+        string fixedSource = """
+            using Darp.Results;
+            using System.IO;
+
+            static class TestClass {
+                /// <exception cref="System.IO.IOException"></exception>
+                static Result<int, string> Run() => throw new IOException();
+            }
+            """.ReplaceLineEndings(Environment.NewLine);
+
+        await VerifyAsync(source, fixedSource);
+    }
+
     private static Task VerifyAsync(string source, string fixedSource)
     {
         var test = new CSharpCodeFixTest<
