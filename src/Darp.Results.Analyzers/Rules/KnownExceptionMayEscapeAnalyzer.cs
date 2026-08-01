@@ -35,8 +35,7 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
         {
             var state = new ExceptionEscapeAnalysis.AnalyzerState(
                 compilationContext.Compilation,
-                compilationContext.Options.AdditionalFiles,
-                RuleIdentifiers.KnownExceptionMayEscapeIdentifier
+                compilationContext.Options.AdditionalFiles
             );
             compilationContext.RegisterOperationAction(
                 operationContext => ExceptionEscapeAnalysis.AnalyzeThrow(operationContext, state, s_rule),
@@ -48,6 +47,11 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
 
 internal static class ExceptionEscapeAnalysis
 {
+    private const string AllowedExceptionTypesOption =
+        "dotnet_code_quality.darp_results_allowed_exception_types";
+    private const string ExcludedMembersOption =
+        "dotnet_code_quality." + RuleIdentifiers.DocumentedExceptionMayEscapeIdentifier + ".excluded_members";
+
     private static readonly ImmutableArray<string> s_defaultAllowedExceptionTypeNames =
     [
         "System.ArgumentException",
@@ -429,16 +433,8 @@ internal static class ExceptionEscapeAnalysis
         builder.Add(exceptionType);
     }
 
-    internal sealed class AnalyzerState(
-        Compilation compilation,
-        ImmutableArray<AdditionalText> additionalFiles,
-        string ruleIdentifier
-    )
+    internal sealed class AnalyzerState(Compilation compilation, ImmutableArray<AdditionalText> additionalFiles)
     {
-        private readonly string _allowedExceptionTypesOption =
-            "dotnet_diagnostic." + ruleIdentifier + ".allowed_exception_types";
-        private readonly string _excludedMembersOption =
-            "dotnet_diagnostic." + ruleIdentifier + ".excluded_members";
         private readonly ConcurrentDictionary<ISymbol, ImmutableArray<INamedTypeSymbol>> _declaredExceptions = new(
             SymbolEqualityComparer.Default
         );
@@ -469,7 +465,7 @@ internal static class ExceptionEscapeAnalysis
                 {
                     AnalyzerConfigOptions options = optionsProvider.GetOptions(tree);
                     IEnumerable<string> configuredTypeNames = s_defaultAllowedExceptionTypeNames;
-                    if (options.TryGetValue(_allowedExceptionTypesOption, out string? configuredValue))
+                    if (options.TryGetValue(AllowedExceptionTypesOption, out string? configuredValue))
                         configuredTypeNames = configuredValue.Split('|', ';');
 
                     var builder = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
@@ -501,7 +497,7 @@ internal static class ExceptionEscapeAnalysis
                 tree =>
                 {
                     AnalyzerConfigOptions options = optionsProvider.GetOptions(tree);
-                    if (!options.TryGetValue(_excludedMembersOption, out string? configuredValue))
+                    if (!options.TryGetValue(ExcludedMembersOption, out string? configuredValue))
                         return ImmutableHashSet<string>.Empty;
 
                     return configuredValue

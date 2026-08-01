@@ -31,8 +31,7 @@ public sealed class DocumentedExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
         {
             var state = new ExceptionEscapeAnalysis.AnalyzerState(
                 compilationContext.Compilation,
-                compilationContext.Options.AdditionalFiles,
-                RuleIdentifiers.DocumentedExceptionMayEscapeIdentifier
+                compilationContext.Options.AdditionalFiles
             );
             compilationContext.RegisterOperationAction(
                 operationContext => ExceptionEscapeAnalysis.AnalyzeDocumentedMember(operationContext, state, s_rule),

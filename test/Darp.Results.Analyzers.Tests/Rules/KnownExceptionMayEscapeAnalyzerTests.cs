@@ -918,14 +918,14 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             root = true
 
             [*.cs]
-            dotnet_diagnostic.DR0005.excluded_members = P:Test.Dependency.Value|M:Test.Dependency.Read
+            dotnet_code_quality.DR0005.excluded_members = P:Test.Dependency.Value|M:Test.Dependency.Read
             """;
 
         await VerifyDocumentedAsync(source, editorConfig);
     }
 
     [Fact]
-    public async Task ConfiguredDocumentedAllowedExceptions_ShouldReplaceDefaults()
+    public async Task SharedAllowedExceptions_ShouldConfigureDocumentedAnalyzer()
     {
         const string source = """
             using Darp.Results;
@@ -948,7 +948,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             root = true
 
             [*.cs]
-            dotnet_diagnostic.DR0005.allowed_exception_types = System.IO.IOException
+            dotnet_code_quality.darp_results_allowed_exception_types = System.IO.IOException
             """;
 
         await VerifyDocumentedAsync(source, editorConfig);
@@ -970,7 +970,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             root = true
 
             [*.cs]
-            dotnet_diagnostic.DR0004.allowed_exception_types = System.Exception
+            dotnet_code_quality.darp_results_allowed_exception_types = System.Exception
             """;
 
         await VerifyAsync(source, editorConfig);
@@ -999,7 +999,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             root = true
 
             [*.cs]
-            dotnet_diagnostic.DR0004.allowed_exception_types = MyCompany.Errors.ExpectedException
+            dotnet_code_quality.darp_results_allowed_exception_types = MyCompany.Errors.ExpectedException
             """;
 
         await VerifyAsync(source, editorConfig);
@@ -1021,7 +1021,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             root = true
 
             [*.cs]
-            dotnet_diagnostic.DR0004.allowed_exception_types = System.IO.IOException
+            dotnet_code_quality.darp_results_allowed_exception_types = System.IO.IOException
             """;
 
         await VerifyAsync(source, editorConfig);
