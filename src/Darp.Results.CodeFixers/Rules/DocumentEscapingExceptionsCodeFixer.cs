@@ -106,7 +106,7 @@ public sealed class DocumentEscapingExceptionsCodeFixer : CodeFixProvider
                 exceptions.Add(
                     new ExceptionDocumentation(
                         documentationId,
-                        exceptionType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                        exceptionType.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat)
                     )
                 );
             }

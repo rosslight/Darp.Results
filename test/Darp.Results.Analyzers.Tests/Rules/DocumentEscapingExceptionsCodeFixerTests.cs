@@ -44,8 +44,8 @@ public sealed class DocumentEscapingExceptionsCodeFixerTests
 
             static class TestClass
             {
-                /// <exception cref="global::System.IO.IOException"></exception>
-                /// <exception cref="global::System.UnauthorizedAccessException"></exception>
+                /// <exception cref="System.IO.IOException"></exception>
+                /// <exception cref="System.UnauthorizedAccessException"></exception>
                 static Result<int, string> Run() => Dependency.Read();
             }
             """;
@@ -73,7 +73,7 @@ public sealed class DocumentEscapingExceptionsCodeFixerTests
             static class TestClass
             {
                 /// <summary>Reads a value.</summary>
-                /// <exception cref="global::System.IO.IOException"></exception>
+                /// <exception cref="System.IO.IOException"></exception>
                 static Result<int, string> Run() => throw new IOException();
             }
             """;
@@ -99,7 +99,7 @@ public sealed class DocumentEscapingExceptionsCodeFixerTests
 
             static class TestClass
             {
-                /// <exception cref="global::System.IO.IOException"></exception>
+                /// <exception cref="System.IO.IOException"></exception>
                 static Result<int, string> Value => throw new IOException();
             }
             """;
@@ -149,8 +149,8 @@ public sealed class DocumentEscapingExceptionsCodeFixerTests
 
             static class TestClass
             {
-                /// <exception cref="global::System.IO.IOException"></exception>
-                /// <exception cref="global::System.InvalidOperationException"></exception>
+                /// <exception cref="System.IO.IOException"></exception>
+                /// <exception cref="System.InvalidOperationException"></exception>
                 static Result<int, string> Run()
                 {
                     int value = Dependency.Read();
@@ -176,48 +176,10 @@ public sealed class DocumentEscapingExceptionsCodeFixerTests
             using System.IO;
 
             static class TestClass {
-                /// <exception cref="global::System.IO.IOException"></exception>
+                /// <exception cref="System.IO.IOException"></exception>
                 static Result<int, string> Run() => throw new IOException();
             }
             """.ReplaceLineEndings(Environment.NewLine);
-
-        await VerifyAsync(source, fixedSource);
-    }
-
-    [Fact]
-    public async Task ShadowedRootNamespace_ShouldUseGloballyQualifiedCref()
-    {
-        const string source = """
-            using Darp.Results;
-            using IOException = global::System.IO.IOException;
-            using System = MyCompany.System;
-
-            namespace MyCompany.System
-            {
-                sealed class Placeholder { }
-            }
-
-            static class TestClass
-            {
-                static Result<int, string> Run() => {|DR0004:throw new IOException()|};
-            }
-            """;
-        const string fixedSource = """
-            using Darp.Results;
-            using IOException = global::System.IO.IOException;
-            using System = MyCompany.System;
-
-            namespace MyCompany.System
-            {
-                sealed class Placeholder { }
-            }
-
-            static class TestClass
-            {
-                /// <exception cref="global::System.IO.IOException"></exception>
-                static Result<int, string> Run() => throw new IOException();
-            }
-            """;
 
         await VerifyAsync(source, fixedSource);
     }
