@@ -47,37 +47,22 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var state = new AnalyzerState(
-                compilationContext.Compilation,
-                compilationContext.Options.AdditionalFiles
-            );
+            var state = new AnalyzerState(compilationContext.Compilation, compilationContext.Options.AdditionalFiles);
             compilationContext.RegisterOperationAction(
                 operationContext => AnalyzeThrow(operationContext, state),
                 OperationKind.Throw
             );
             compilationContext.RegisterOperationAction(
-                operationContext => AnalyzeDocumentedMember(
-                    operationContext,
-                    state,
-                    ((IInvocationOperation)operationContext.Operation).TargetMethod
-                ),
-                OperationKind.Invocation
-            );
-            compilationContext.RegisterOperationAction(
-                operationContext => AnalyzeDocumentedMember(
-                    operationContext,
-                    state,
-                    ((IObjectCreationOperation)operationContext.Operation).Constructor
-                ),
-                OperationKind.ObjectCreation
-            );
-            compilationContext.RegisterOperationAction(
-                operationContext => AnalyzeDocumentedMember(
-                    operationContext,
-                    state,
-                    ((IPropertyReferenceOperation)operationContext.Operation).Property
-                ),
-                OperationKind.PropertyReference
+                operationContext => AnalyzeDocumentedMember(operationContext, state),
+                OperationKind.Invocation,
+                OperationKind.ObjectCreation,
+                OperationKind.PropertyReference,
+                OperationKind.Binary,
+                OperationKind.Unary,
+                OperationKind.Conversion,
+                OperationKind.CompoundAssignment,
+                OperationKind.Increment,
+                OperationKind.Decrement
             );
         });
     }
@@ -90,28 +75,30 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
 
         var operation = (IThrowOperation)context.Operation;
         INamedTypeSymbol? exceptionType = GetThrownExceptionType(operation, state.Compilation);
-        if (
-            exceptionType is null
-            || IsPermitted(context, state, containingFunction, exceptionType, context.Operation)
-        )
+        if (exceptionType is null || IsPermitted(context, state, containingFunction, exceptionType, context.Operation))
             return;
 
         ReportDiagnostic(context, operation, [exceptionType]);
     }
 
-    private static void AnalyzeDocumentedMember(
-        OperationAnalysisContext context,
-        AnalyzerState state,
-        ISymbol? invokedMember
-    )
+    private static void AnalyzeDocumentedMember(OperationAnalysisContext context, AnalyzerState state)
     {
-        if (invokedMember is null || context.Operation.IsImplicit)
+        (ISymbol? invokedMember, INamedTypeSymbol? receiverType) = GetInvokedMember(context.Operation);
+        if (
+            invokedMember is null
+            || context.Operation.IsImplicit
+                && context.Operation is not IConversionOperation { OperatorMethod: not null }
+        )
             return;
         IMethodSymbol? containingFunction = GetContainingFunction(context.Operation, context.ContainingSymbol);
         if (containingFunction is null || !containingFunction.ReturnType.IsResultReturningType())
             return;
 
-        ImmutableArray<INamedTypeSymbol> documentedExceptions = state.GetDocumentedExceptions(invokedMember);
+        ImmutableArray<INamedTypeSymbol> documentedExceptions = GetDocumentedExceptions(
+            state,
+            invokedMember,
+            receiverType
+        );
         if (documentedExceptions.IsDefaultOrEmpty)
             return;
 
@@ -125,6 +112,22 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
 
         if (escapingExceptions.Count > 0)
             ReportDiagnostic(context, context.Operation, escapingExceptions.ToImmutable());
+    }
+
+    private static (ISymbol? Member, INamedTypeSymbol? ReceiverType) GetInvokedMember(IOperation operation)
+    {
+        return operation switch
+        {
+            IInvocationOperation invocation => (invocation.TargetMethod, invocation.Instance?.Type as INamedTypeSymbol),
+            IObjectCreationOperation creation => (creation.Constructor, null),
+            IPropertyReferenceOperation property => (property.Property, property.Instance?.Type as INamedTypeSymbol),
+            IBinaryOperation binary => (binary.OperatorMethod, null),
+            IUnaryOperation unary => (unary.OperatorMethod, null),
+            IConversionOperation conversion => (conversion.OperatorMethod, null),
+            ICompoundAssignmentOperation assignment => (assignment.OperatorMethod, null),
+            IIncrementOrDecrementOperation increment => (increment.OperatorMethod, null),
+            _ => (null, null),
+        };
     }
 
     private static IMethodSymbol? GetContainingFunction(IOperation operation, ISymbol fallbackSymbol)
@@ -181,7 +184,12 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
             return true;
 
         ISymbol documentationOwner = GetDocumentationOwner(containingFunction);
-        if (IsCoveredBy(exceptionType, state.GetDocumentedExceptions(documentationOwner)))
+        if (
+            IsCoveredBy(
+                exceptionType,
+                GetDocumentedExceptions(state, documentationOwner, containingFunction.ContainingType)
+            )
+        )
             return true;
 
         return catchSite is not null && IsCaught(catchSite, exceptionType, state.Compilation);
@@ -221,10 +229,95 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
         return symbol is IMethodSymbol { AssociatedSymbol: { } associatedSymbol } ? associatedSymbol : symbol;
     }
 
-    private static bool IsCoveredBy(
-        INamedTypeSymbol exceptionType,
-        ImmutableArray<INamedTypeSymbol> permittedBaseTypes
+    private static ImmutableArray<INamedTypeSymbol> GetDocumentedExceptions(
+        AnalyzerState state,
+        ISymbol symbol,
+        INamedTypeSymbol? receiverType
     )
+    {
+        var builder = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
+        foreach (ISymbol candidate in GetDocumentationCandidates(symbol, receiverType))
+        {
+            foreach (INamedTypeSymbol exceptionType in state.GetDeclaredExceptions(candidate))
+                AddDistinct(builder, exceptionType);
+        }
+        return builder.ToImmutable();
+    }
+
+    private static IEnumerable<ISymbol> GetDocumentationCandidates(ISymbol symbol, INamedTypeSymbol? receiverType)
+    {
+        var seen = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        foreach (ISymbol contract in GetApplicableContracts(GetDocumentationOwner(symbol), receiverType))
+        {
+            ISymbol definition = contract.OriginalDefinition;
+            if (seen.Add(definition))
+                yield return definition;
+        }
+    }
+
+    private static IEnumerable<ISymbol> GetApplicableContracts(ISymbol symbol, INamedTypeSymbol? receiverType)
+    {
+        yield return symbol;
+
+        switch (symbol)
+        {
+            case IMethodSymbol method:
+                if (method.ReducedFrom is { } reducedFrom)
+                    yield return reducedFrom;
+                for (
+                    IMethodSymbol? overridden = method.OverriddenMethod;
+                    overridden is not null;
+                    overridden = overridden.OverriddenMethod
+                )
+                {
+                    yield return overridden;
+                }
+                foreach (IMethodSymbol contract in method.ExplicitInterfaceImplementations)
+                    yield return contract;
+                break;
+            case IPropertySymbol property:
+                for (
+                    IPropertySymbol? overridden = property.OverriddenProperty;
+                    overridden is not null;
+                    overridden = overridden.OverriddenProperty
+                )
+                {
+                    yield return overridden;
+                }
+                foreach (IPropertySymbol contract in property.ExplicitInterfaceImplementations)
+                    yield return contract;
+                break;
+        }
+
+        foreach (ISymbol contract in GetImplicitInterfaceContracts(symbol, receiverType ?? symbol.ContainingType))
+            yield return contract;
+    }
+
+    private static IEnumerable<ISymbol> GetImplicitInterfaceContracts(ISymbol symbol, INamedTypeSymbol? receiverType)
+    {
+        if (receiverType is null)
+            yield break;
+
+        foreach (INamedTypeSymbol interfaceType in receiverType.AllInterfaces)
+        {
+            foreach (ISymbol interfaceMember in interfaceType.GetMembers(symbol.Name))
+            {
+                ISymbol? implementation = receiverType.FindImplementationForInterfaceMember(interfaceMember);
+                if (
+                    implementation is not null
+                    && SymbolEqualityComparer.Default.Equals(
+                        implementation.OriginalDefinition,
+                        symbol.OriginalDefinition
+                    )
+                )
+                {
+                    yield return interfaceMember;
+                }
+            }
+        }
+    }
+
+    private static bool IsCoveredBy(INamedTypeSymbol exceptionType, ImmutableArray<INamedTypeSymbol> permittedBaseTypes)
     {
         foreach (INamedTypeSymbol permittedBaseType in permittedBaseTypes)
         {
@@ -248,7 +341,8 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
             {
                 if (catchClause.Filter is not null)
                     continue;
-                INamedTypeSymbol? caughtType = catchClause.ExceptionType as INamedTypeSymbol
+                INamedTypeSymbol? caughtType =
+                    catchClause.ExceptionType as INamedTypeSymbol
                     ?? compilation.GetTypeByMetadataName("System.Exception");
                 if (caughtType is not null && IsSameOrDerivedFrom(exceptionType, caughtType))
                     return true;
@@ -294,23 +388,34 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
         );
     }
 
+    private static void AddDistinct(ImmutableArray<INamedTypeSymbol>.Builder builder, INamedTypeSymbol exceptionType)
+    {
+        foreach (INamedTypeSymbol existingType in builder)
+        {
+            if (SymbolEqualityComparer.Default.Equals(existingType, exceptionType))
+                return;
+        }
+        builder.Add(exceptionType);
+    }
+
     private sealed class AnalyzerState(Compilation compilation, ImmutableArray<AdditionalText> additionalFiles)
     {
-        private readonly ConcurrentDictionary<ISymbol, ImmutableArray<INamedTypeSymbol>> _documentedExceptions =
-            new(SymbolEqualityComparer.Default);
-        private readonly ConcurrentDictionary<SyntaxTree, ImmutableArray<INamedTypeSymbol>> _configuredAllowedExceptions =
-            new();
-        private readonly ConcurrentDictionary<AdditionalText, ImmutableDictionary<string, ImmutableArray<INamedTypeSymbol>>> _additionalDocumentation =
-            new();
+        private readonly ConcurrentDictionary<ISymbol, ImmutableArray<INamedTypeSymbol>> _declaredExceptions = new(
+            SymbolEqualityComparer.Default
+        );
+        private readonly ConcurrentDictionary<
+            SyntaxTree,
+            ImmutableArray<INamedTypeSymbol>
+        > _configuredAllowedExceptions = new();
         private readonly Dictionary<string, ImmutableArray<AdditionalText>> _additionalDocumentationByAssembly =
             CreateAdditionalDocumentationMap(additionalFiles);
         private readonly INamedTypeSymbol? _exceptionType = compilation.GetTypeByMetadataName("System.Exception");
 
         public Compilation Compilation { get; } = compilation;
 
-        public ImmutableArray<INamedTypeSymbol> GetDocumentedExceptions(ISymbol symbol)
+        public ImmutableArray<INamedTypeSymbol> GetDeclaredExceptions(ISymbol symbol)
         {
-            return _documentedExceptions.GetOrAdd(symbol, ReadDocumentedExceptions);
+            return _declaredExceptions.GetOrAdd(symbol, ReadDeclaredExceptions);
         }
 
         public ImmutableArray<INamedTypeSymbol> GetConfiguredAllowedExceptions(
@@ -349,47 +454,30 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
             );
         }
 
-        private ImmutableArray<INamedTypeSymbol> ReadDocumentedExceptions(ISymbol symbol)
+        private ImmutableArray<INamedTypeSymbol> ReadDeclaredExceptions(ISymbol symbol)
         {
             var builder = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
-            foreach (ISymbol candidate in GetDocumentationCandidates(symbol))
+            string? xml = symbol.GetDocumentationCommentXml(cancellationToken: default);
+            if (!string.IsNullOrWhiteSpace(xml))
             {
-                string? xml = candidate.GetDocumentationCommentXml(cancellationToken: default);
-                if (!string.IsNullOrWhiteSpace(xml))
+                try
                 {
-                    try
+                    foreach (XElement exceptionElement in XElement.Parse(xml).Descendants("exception"))
                     {
-                        foreach (XElement exceptionElement in XElement.Parse(xml).Descendants("exception"))
-                        {
-                            string? declarationId = exceptionElement.Attribute("cref")?.Value;
-                            if (declarationId is null || declarationId.StartsWith("!:", StringComparison.Ordinal))
-                                continue;
-                            if (
-                                DocumentationCommentId.GetFirstSymbolForDeclarationId(declarationId, Compilation)
-                                is INamedTypeSymbol exceptionType
-                                && _exceptionType is not null
-                                && IsSameOrDerivedFrom(exceptionType, _exceptionType)
-                            )
-                            {
-                                AddDistinct(builder, exceptionType);
-                            }
-                        }
-                    }
-                    catch (XmlException)
-                    {
-                        // Invalid XML documentation cannot establish an exception contract.
+                        AddExceptionType(exceptionElement.Attribute("cref")?.Value, builder);
                     }
                 }
-
-                ReadAdditionalDocumentation(candidate, builder);
+                catch (XmlException)
+                {
+                    // Invalid XML documentation cannot establish an exception contract.
+                }
             }
+
+            ReadAdditionalDocumentation(symbol, builder);
             return builder.ToImmutable();
         }
 
-        private void ReadAdditionalDocumentation(
-            ISymbol symbol,
-            ImmutableArray<INamedTypeSymbol>.Builder builder
-        )
+        private void ReadAdditionalDocumentation(ISymbol symbol, ImmutableArray<INamedTypeSymbol>.Builder builder)
         {
             if (
                 symbol.ContainingAssembly is not { } containingAssembly
@@ -402,59 +490,25 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
 
             foreach (AdditionalText documentationFile in documentationFiles)
             {
-                ImmutableDictionary<string, ImmutableArray<INamedTypeSymbol>> documentation =
-                    _additionalDocumentation.GetOrAdd(documentationFile, ParseAdditionalDocumentation);
-                if (!documentation.TryGetValue(declarationId, out var exceptionTypes))
-                    continue;
-                foreach (INamedTypeSymbol exceptionType in exceptionTypes)
-                    AddDistinct(builder, exceptionType);
+                foreach (string exceptionId in XmlDocumentationIndex.GetExceptionIds(documentationFile, declarationId))
+                {
+                    AddExceptionType(exceptionId, builder);
+                }
             }
         }
 
-        private ImmutableDictionary<string, ImmutableArray<INamedTypeSymbol>> ParseAdditionalDocumentation(
-            AdditionalText documentationFile
-        )
+        private void AddExceptionType(string? declarationId, ImmutableArray<INamedTypeSymbol>.Builder builder)
         {
-            string? xml = documentationFile.GetText()?.ToString();
-            if (string.IsNullOrWhiteSpace(xml))
-                return ImmutableDictionary<string, ImmutableArray<INamedTypeSymbol>>.Empty;
-
-            try
+            if (
+                declarationId is not null
+                && !declarationId.StartsWith("!:", StringComparison.Ordinal)
+                && DocumentationCommentId.GetFirstSymbolForDeclarationId(declarationId, Compilation)
+                    is INamedTypeSymbol exceptionType
+                && _exceptionType is not null
+                && IsSameOrDerivedFrom(exceptionType, _exceptionType)
+            )
             {
-                var documentation = ImmutableDictionary.CreateBuilder<string, ImmutableArray<INamedTypeSymbol>>(
-                    StringComparer.Ordinal
-                );
-                foreach (XElement memberElement in XElement.Parse(xml).Descendants("member"))
-                {
-                    string? declarationId = memberElement.Attribute("name")?.Value;
-                    if (declarationId is null)
-                        continue;
-
-                    var exceptionTypes = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
-                    foreach (XElement exceptionElement in memberElement.Elements("exception"))
-                    {
-                        string? exceptionId = exceptionElement.Attribute("cref")?.Value;
-                        if (
-                            exceptionId is not null
-                            && !exceptionId.StartsWith("!:", StringComparison.Ordinal)
-                            && DocumentationCommentId.GetFirstSymbolForDeclarationId(exceptionId, Compilation)
-                                is INamedTypeSymbol exceptionType
-                            && _exceptionType is not null
-                            && IsSameOrDerivedFrom(exceptionType, _exceptionType)
-                        )
-                        {
-                            AddDistinct(exceptionTypes, exceptionType);
-                        }
-                    }
-
-                    if (exceptionTypes.Count > 0)
-                        documentation[declarationId] = exceptionTypes.ToImmutable();
-                }
-                return documentation.ToImmutable();
-            }
-            catch (XmlException)
-            {
-                return ImmutableDictionary<string, ImmutableArray<INamedTypeSymbol>>.Empty;
+                AddDistinct(builder, exceptionType);
             }
         }
 
@@ -494,75 +548,6 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
             int startIndex = separatorIndex + 1;
             int endIndex = extensionIndex > separatorIndex ? extensionIndex : path.Length;
             return endIndex > startIndex ? path.Substring(startIndex, endIndex - startIndex) : string.Empty;
-        }
-
-        private static IEnumerable<ISymbol> GetDocumentationCandidates(ISymbol symbol)
-        {
-            symbol = GetDocumentationOwner(symbol);
-            yield return symbol;
-
-            switch (symbol)
-            {
-                case IMethodSymbol method:
-                    if (method.ReducedFrom is { } reducedFrom)
-                    {
-                        yield return reducedFrom;
-                        if (!SymbolEqualityComparer.Default.Equals(reducedFrom, reducedFrom.OriginalDefinition))
-                            yield return reducedFrom.OriginalDefinition;
-                    }
-                    if (!SymbolEqualityComparer.Default.Equals(method, method.OriginalDefinition))
-                        yield return method.OriginalDefinition;
-                    for (IMethodSymbol? overridden = method.OverriddenMethod; overridden is not null; overridden = overridden.OverriddenMethod)
-                        yield return overridden;
-                    foreach (IMethodSymbol implementation in method.ExplicitInterfaceImplementations)
-                        yield return implementation;
-                    foreach (ISymbol contract in GetImplicitInterfaceContracts(method))
-                        yield return contract;
-                    break;
-                case IPropertySymbol property:
-                    if (!SymbolEqualityComparer.Default.Equals(property, property.OriginalDefinition))
-                        yield return property.OriginalDefinition;
-                    for (IPropertySymbol? overridden = property.OverriddenProperty; overridden is not null; overridden = overridden.OverriddenProperty)
-                        yield return overridden;
-                    foreach (IPropertySymbol implementation in property.ExplicitInterfaceImplementations)
-                        yield return implementation;
-                    foreach (ISymbol contract in GetImplicitInterfaceContracts(property))
-                        yield return contract;
-                    break;
-            }
-        }
-
-        private static IEnumerable<ISymbol> GetImplicitInterfaceContracts(ISymbol symbol)
-        {
-            foreach (INamedTypeSymbol interfaceType in symbol.ContainingType.AllInterfaces)
-            {
-                foreach (ISymbol interfaceMember in interfaceType.GetMembers(symbol.Name))
-                {
-                    ISymbol? implementation = symbol.ContainingType.FindImplementationForInterfaceMember(
-                        interfaceMember
-                    );
-                    if (SymbolEqualityComparer.Default.Equals(implementation, symbol))
-                    {
-                        yield return interfaceMember;
-                        ISymbol definition = interfaceMember.OriginalDefinition;
-                        if (!SymbolEqualityComparer.Default.Equals(interfaceMember, definition))
-                            yield return definition;
-                    }
-                }
-            }
-        }
-
-        private static void AddDistinct(
-            ImmutableArray<INamedTypeSymbol>.Builder builder,
-            INamedTypeSymbol exceptionType
-        )
-        {
-            foreach (INamedTypeSymbol existingType in builder)
-            {
-                if (SymbolEqualityComparer.Default.Equals(existingType, exceptionType))
-                    return;
-            }
-            builder.Add(exceptionType);
         }
     }
 }

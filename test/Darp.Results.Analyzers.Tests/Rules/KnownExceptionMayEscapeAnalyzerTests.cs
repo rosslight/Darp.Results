@@ -1,4 +1,5 @@
 using Darp.Results.Analyzers.Rules;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -555,6 +556,152 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
         test.TestState.AdditionalProjectReferences.Add("Dependency");
         test.TestState.AdditionalFiles.Add(("Dependency.xml", documentation));
         await test.RunAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ReferencedGenericOverrideAndExplicitInterfaceContracts_ShouldResolveDefinitions()
+    {
+        const string dependencySource = """
+            using Darp.Results;
+
+            namespace Dependency;
+
+            public abstract class Base<T>
+            {
+                public abstract T Read();
+            }
+
+            public interface IReader<T>
+            {
+                Result<T, string> ReadResult();
+            }
+            """;
+        const string source = """
+            using Darp.Results;
+            using Dependency;
+            using System.IO;
+
+            sealed class Reader : Base<int>
+            {
+                public override int Read() => 0;
+            }
+
+            sealed class ExplicitReader : IReader<int>
+            {
+                Result<int, string> IReader<int>.ReadResult() => throw new IOException();
+            }
+
+            static class TestClass
+            {
+                static Result<int, string> Run(Reader reader) => {|DR0004:reader.Read()|};
+            }
+            """;
+        const string documentation = """
+            <doc>
+              <members>
+                <member name="M:Dependency.Base`1.Read">
+                  <exception cref="T:System.InvalidOperationException"></exception>
+                </member>
+                <member name="M:Dependency.IReader`1.ReadResult">
+                  <exception cref="T:System.IO.IOException"></exception>
+                </member>
+              </members>
+            </doc>
+            """;
+
+        var test = new ResultAnalyzerTest<KnownExceptionMayEscapeAnalyzer> { TestCode = source };
+        var dependency = test.TestState.AdditionalProjects["Dependency"];
+        dependency.Sources.Add(dependencySource);
+        dependency.AdditionalReferences.Add(
+            MetadataReference.CreateFromFile(typeof(global::Darp.Results.Result<,>).Assembly.Location)
+        );
+        test.TestState.AdditionalProjectReferences.Add("Dependency");
+        test.TestState.AdditionalFiles.Add(("Dependency.xml", documentation));
+        await test.RunAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ImplicitInterfaceContracts_ShouldUseMethodDefinitionsAndReceiverType()
+    {
+        const string source = """
+            using Darp.Results;
+            using System.IO;
+
+            interface IGenericReader
+            {
+                /// <exception cref="IOException"></exception>
+                T Read<T>();
+            }
+
+            sealed class GenericReader : IGenericReader
+            {
+                public T Read<T>() => default(T);
+            }
+
+            interface IReader
+            {
+                /// <exception cref="IOException"></exception>
+                int Read();
+            }
+
+            class ReaderBase
+            {
+                public int Read() => 0;
+            }
+
+            sealed class Reader : ReaderBase, IReader { }
+
+            static class TestClass
+            {
+                static Result<int, string> RunGeneric(GenericReader reader) => {|DR0004:reader.Read<int>()|};
+
+                static Result<int, string> RunInherited(Reader reader) => {|DR0004:reader.Read()|};
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
+    public async Task DocumentedUserDefinedOperators_ShouldWarn()
+    {
+        const string source = """
+            using Darp.Results;
+            using System.IO;
+
+            readonly struct Number
+            {
+                /// <exception cref="IOException"></exception>
+                public static Number operator +(Number left, Number right) => left;
+
+                /// <exception cref="IOException"></exception>
+                public static Number operator -(Number value) => value;
+
+                /// <exception cref="IOException"></exception>
+                public static Number operator ++(Number value) => value;
+
+                /// <exception cref="IOException"></exception>
+                public static explicit operator int(Number value) => 0;
+
+                /// <exception cref="IOException"></exception>
+                public static implicit operator string(Number value) => string.Empty;
+            }
+
+            static class TestClass
+            {
+                static Result<int, string> Calculate(Number left, Number right)
+                {
+                    left = {|DR0004:left + right|};
+                    left = {|DR0004:-left|};
+                    {|DR0004:left += right|};
+                    {|DR0004:left++|};
+                    string text = {|DR0004:left|};
+                    return {|DR0004:(int)left|};
+                }
+            }
+            """;
+
+        await VerifyAsync(source);
     }
 
     [Fact]
