@@ -61,6 +61,7 @@ internal static class ExceptionEscapeAnalysis
         "System.Diagnostics.UnreachableException",
         "System.ObjectDisposedException",
         "System.Runtime.CompilerServices.SwitchExpressionException",
+        "System.Threading.SemaphoreFullException",
     ];
 
     internal static void AnalyzeThrow(

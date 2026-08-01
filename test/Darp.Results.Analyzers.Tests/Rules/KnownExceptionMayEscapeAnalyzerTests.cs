@@ -85,6 +85,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             using System;
             using System.Diagnostics;
             using System.Runtime.CompilerServices;
+            using System.Threading;
 
             static class TestClass
             {
@@ -95,6 +96,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
                 static Result<int, string> Unreachable() => throw new UnreachableException();
                 static Result<int, string> ObjectDisposed() => throw new ObjectDisposedException("resource");
                 static Result<int, string> SwitchExpression() => throw new SwitchExpressionException();
+                static Result<int, string> SemaphoreFull() => throw new SemaphoreFullException();
             }
             """;
 
