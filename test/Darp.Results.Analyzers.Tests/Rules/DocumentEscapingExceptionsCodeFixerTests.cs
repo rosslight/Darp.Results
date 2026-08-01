@@ -2,6 +2,7 @@ using Darp.Results.Analyzers.Rules;
 using Darp.Results.CodeFixers.Rules;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Testing.Verifiers;
 using Xunit;
@@ -27,7 +28,7 @@ public sealed class DocumentEscapingExceptionsCodeFixerTests
 
             static class TestClass
             {
-                static Result<int, string> Run() => {|DR0004:Dependency.Read()|};
+                static Result<int, string> Run() => {|DR0005:Dependency.Read()|};
             }
             """;
         const string fixedSource = """
@@ -50,7 +51,7 @@ public sealed class DocumentEscapingExceptionsCodeFixerTests
             }
             """;
 
-        await VerifyAsync(source, fixedSource);
+        await VerifyDocumentedAsync(source, fixedSource);
     }
 
     [Fact]
@@ -128,8 +129,8 @@ public sealed class DocumentEscapingExceptionsCodeFixerTests
             {
                 static Result<int, string> Run()
                 {
-                    int value = {|DR0004:Dependency.Read()|};
-                    return {|DR0004:Dependency.Validate(value)|};
+                    int value = {|DR0005:Dependency.Read()|};
+                    return {|DR0005:Dependency.Validate(value)|};
                 }
             }
             """;
@@ -159,7 +160,7 @@ public sealed class DocumentEscapingExceptionsCodeFixerTests
             }
             """;
 
-        await VerifyAsync(source, fixedSource);
+        await VerifyDocumentedAsync(source, fixedSource);
     }
 
     [Fact]
@@ -186,8 +187,19 @@ public sealed class DocumentEscapingExceptionsCodeFixerTests
 
     private static Task VerifyAsync(string source, string fixedSource)
     {
+        return VerifyAsync<KnownExceptionMayEscapeAnalyzer>(source, fixedSource);
+    }
+
+    private static Task VerifyDocumentedAsync(string source, string fixedSource)
+    {
+        return VerifyAsync<DocumentedExceptionMayEscapeAnalyzer>(source, fixedSource);
+    }
+
+    private static Task VerifyAsync<TAnalyzer>(string source, string fixedSource)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+    {
         var test = new CSharpCodeFixTest<
-            KnownExceptionMayEscapeAnalyzer,
+            TAnalyzer,
             DocumentEscapingExceptionsCodeFixer,
             DefaultVerifier
         >

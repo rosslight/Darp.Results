@@ -11,6 +11,39 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
     public void HelpLink_ShouldBeCorrect()
     {
         ResultHelpers.VerifyHelpLink<KnownExceptionMayEscapeAnalyzer>("DR0004");
+        ResultHelpers.VerifyHelpLink<DocumentedExceptionMayEscapeAnalyzer>("DR0005");
+    }
+
+    [Fact]
+    public async Task SplitAnalyzers_ShouldIgnoreTheOtherEvidenceSource()
+    {
+        const string explicitThrow = """
+            using Darp.Results;
+            using System.IO;
+
+            static class TestClass
+            {
+                static Result<int, string> Run() => throw new IOException();
+            }
+            """;
+        const string documentedInvocation = """
+            using Darp.Results;
+            using System.IO;
+
+            static class Dependency
+            {
+                /// <exception cref="IOException"></exception>
+                internal static int Read() => 0;
+            }
+
+            static class TestClass
+            {
+                static Result<int, string> Run() => Dependency.Read();
+            }
+            """;
+
+        await VerifyDocumentedAsync(explicitThrow);
+        await VerifyAsync(documentedInvocation);
     }
 
     [Fact]
@@ -142,11 +175,11 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
 
             static class TestClass
             {
-                static Result<int, string> Run(string path) => {|DR0004:Dependency.Read(path)|};
+                static Result<int, string> Run(string path) => {|DR0005:Dependency.Read(path)|};
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
     }
 
     [Fact]
@@ -169,7 +202,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
     }
 
     [Fact]
@@ -190,7 +223,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
     }
 
     [Fact]
@@ -222,7 +255,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
     }
 
     [Fact]
@@ -295,12 +328,12 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
 
             static class TestClass
             {
-                static Result<Dependency, string> Create() => {|DR0004:new Dependency()|};
-                static Result<int, string> Read(Dependency dependency) => {|DR0004:dependency.Value|};
+                static Result<Dependency, string> Create() => {|DR0005:new Dependency()|};
+                static Result<int, string> Read(Dependency dependency) => {|DR0005:dependency.Value|};
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
     }
 
     [Fact]
@@ -322,7 +355,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
     }
 
     [Fact]
@@ -346,7 +379,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
                     Task<int> task;
                     try
                     {
-                        task = {|DR0004:Dependency.ReadAsync()|};
+                        task = {|DR0005:Dependency.ReadAsync()|};
                     }
                     catch (IOException)
                     {
@@ -358,7 +391,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
     }
 
     [Fact]
@@ -382,7 +415,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
                     Task<int> task;
                     try
                     {
-                        task = {|DR0004:Dependency.Value|};
+                        task = {|DR0005:Dependency.Value|};
                     }
                     catch (IOException)
                     {
@@ -406,7 +439,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
     }
 
     [Fact]
@@ -439,7 +472,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
     }
 
     [Fact]
@@ -472,7 +505,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
     }
 
     [Fact]
@@ -483,7 +516,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
 
             static class TestClass
             {
-                static Result<int, string> Run() => {|DR0004:new Result.Ok<int, string>(1)|};
+                static Result<int, string> Run() => {|DR0005:new Result.Ok<int, string>(1)|};
             }
             """;
         const string documentation = """
@@ -500,7 +533,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             </doc>
             """;
 
-        var test = new ResultAnalyzerTest<KnownExceptionMayEscapeAnalyzer> { TestCode = source };
+        var test = new ResultAnalyzerTest<DocumentedExceptionMayEscapeAnalyzer> { TestCode = source };
         test.TestState.AdditionalFiles.Add(
             (Path.ChangeExtension(typeof(Result<,>).Assembly.Location, ".xml"), documentation)
         );
@@ -515,7 +548,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
 
             static class TestClass
             {
-                static Result<int, string> Run() => {|DR0004:Result.Try(() => 1)|}.MapError(_ => "error");
+                static Result<int, string> Run() => {|DR0005:Result.Try(() => 1)|}.MapError(_ => "error");
             }
             """;
         const string documentation = """
@@ -532,7 +565,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             </doc>
             """;
 
-        var test = new ResultAnalyzerTest<KnownExceptionMayEscapeAnalyzer> { TestCode = source };
+        var test = new ResultAnalyzerTest<DocumentedExceptionMayEscapeAnalyzer> { TestCode = source };
         test.TestState.AdditionalFiles.Add(
             (Path.ChangeExtension(typeof(Result<,>).Assembly.Location, ".xml"), documentation)
         );
@@ -558,7 +591,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
 
             static class TestClass
             {
-                static Result<int, string> Run(Values<int> values) => {|DR0004:values.First()|};
+                static Result<int, string> Run(Values<int> values) => {|DR0005:values.First()|};
             }
             """;
         const string documentation = """
@@ -575,7 +608,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             </doc>
             """;
 
-        var test = new ResultAnalyzerTest<KnownExceptionMayEscapeAnalyzer> { TestCode = source };
+        var test = new ResultAnalyzerTest<DocumentedExceptionMayEscapeAnalyzer> { TestCode = source };
         test.TestState.AdditionalProjects["Dependency"].Sources.Add(dependencySource);
         test.TestState.AdditionalProjectReferences.Add("Dependency");
         test.TestState.AdditionalFiles.Add(("Dependency.xml", documentation));
@@ -604,7 +637,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
 
             static class TestClass
             {
-                static Result<int, string> Run(Reader reader) => {|DR0004:reader.Read()|};
+                static Result<int, string> Run(Reader reader) => {|DR0005:reader.Read()|};
             }
             """;
         const string documentation = """
@@ -621,7 +654,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             </doc>
             """;
 
-        var test = new ResultAnalyzerTest<KnownExceptionMayEscapeAnalyzer> { TestCode = source };
+        var test = new ResultAnalyzerTest<DocumentedExceptionMayEscapeAnalyzer> { TestCode = source };
         test.TestState.AdditionalProjects["Dependency"].Sources.Add(dependencySource);
         test.TestState.AdditionalProjectReferences.Add("Dependency");
         test.TestState.AdditionalFiles.Add(("Dependency.xml", documentation));
@@ -663,7 +696,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
 
             static class TestClass
             {
-                static Result<int, string> Run(Reader reader) => {|DR0004:reader.Read()|};
+                static Result<int, string> Run(Reader reader) => {|DR0005:reader.Read()|};
             }
             """;
         const string documentation = """
@@ -679,7 +712,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             </doc>
             """;
 
-        var test = new ResultAnalyzerTest<KnownExceptionMayEscapeAnalyzer> { TestCode = source };
+        var test = new ResultAnalyzerTest<DocumentedExceptionMayEscapeAnalyzer> { TestCode = source };
         var dependency = test.TestState.AdditionalProjects["Dependency"];
         dependency.Sources.Add(dependencySource);
         dependency.AdditionalReferences.Add(
@@ -723,13 +756,13 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
 
             static class TestClass
             {
-                static Result<int, string> RunGeneric(GenericReader reader) => {|DR0004:reader.Read<int>()|};
+                static Result<int, string> RunGeneric(GenericReader reader) => {|DR0005:reader.Read<int>()|};
 
-                static Result<int, string> RunInherited(Reader reader) => {|DR0004:reader.Read()|};
+                static Result<int, string> RunInherited(Reader reader) => {|DR0005:reader.Read()|};
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
     }
 
     [Fact]
@@ -761,17 +794,17 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
             {
                 static Result<int, string> Calculate(Number left, Number right)
                 {
-                    left = {|DR0004:left + right|};
-                    left = {|DR0004:-left|};
-                    {|DR0004:left += right|};
-                    {|DR0004:left++|};
-                    string text = {|DR0004:left|};
-                    return {|DR0004:(int)left|};
+                    left = {|DR0005:left + right|};
+                    left = {|DR0005:-left|};
+                    {|DR0005:left += right|};
+                    {|DR0005:left++|};
+                    string text = {|DR0005:left|};
+                    return {|DR0005:(int)left|};
                 }
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
     }
 
     [Fact]
@@ -816,11 +849,11 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
 
             static class TestClass
             {
-                static Result<int, string> Run(Reader reader) => {|DR0004:reader.Read()|};
+                static Result<int, string> Run(Reader reader) => {|DR0005:reader.Read()|};
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
     }
 
     [Fact]
@@ -843,11 +876,82 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
 
             static class TestClass
             {
-                static Result<int, string> Run(Reader reader) => {|DR0004:reader.Value|};
+                static Result<int, string> Run(Reader reader) => {|DR0005:reader.Value|};
             }
             """;
 
-        await VerifyAsync(source);
+        await VerifyDocumentedAsync(source);
+    }
+
+    [Fact]
+    public async Task ConfiguredExcludedMembers_ShouldExcludeEveryListedMember()
+    {
+        const string source = """
+            using Darp.Results;
+            using System.IO;
+
+            namespace Test;
+
+            static class Dependency
+            {
+                /// <exception cref="IOException"></exception>
+                internal static int Read() => 0;
+
+                /// <exception cref="IOException"></exception>
+                internal static int Value => 0;
+
+                /// <exception cref="IOException"></exception>
+                internal static int Other() => 0;
+            }
+
+            static class TestClass
+            {
+                static Result<int, string> Run()
+                {
+                    _ = Dependency.Read();
+                    _ = Dependency.Value;
+                    return {|DR0005:Dependency.Other()|};
+                }
+            }
+            """;
+        const string editorConfig = """
+            root = true
+
+            [*.cs]
+            dotnet_diagnostic.DR0005.excluded_members = P:Test.Dependency.Value|M:Test.Dependency.Read
+            """;
+
+        await VerifyDocumentedAsync(source, editorConfig);
+    }
+
+    [Fact]
+    public async Task ConfiguredDocumentedAllowedExceptions_ShouldReplaceDefaults()
+    {
+        const string source = """
+            using Darp.Results;
+            using System;
+            using System.IO;
+
+            static class Dependency
+            {
+                /// <exception cref="IOException"></exception>
+                /// <exception cref="ArgumentException"></exception>
+                internal static int Read() => 0;
+            }
+
+            static class TestClass
+            {
+                static Result<int, string> Run() => {|DR0005:Dependency.Read()|};
+            }
+            """;
+        const string editorConfig = """
+            root = true
+
+            [*.cs]
+            dotnet_diagnostic.DR0005.allowed_exception_types = System.IO.IOException
+            """;
+
+        await VerifyDocumentedAsync(source, editorConfig);
     }
 
     [Fact]
@@ -948,6 +1052,14 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
     private static Task VerifyAsync(string source, string? editorConfig = null)
     {
         var test = new ResultAnalyzerTest<KnownExceptionMayEscapeAnalyzer> { TestCode = source };
+        if (editorConfig is not null)
+            test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
+        return test.RunAsync(CancellationToken.None);
+    }
+
+    private static Task VerifyDocumentedAsync(string source, string? editorConfig = null)
+    {
+        var test = new ResultAnalyzerTest<DocumentedExceptionMayEscapeAnalyzer> { TestCode = source };
         if (editorConfig is not null)
             test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
         return test.RunAsync(CancellationToken.None);

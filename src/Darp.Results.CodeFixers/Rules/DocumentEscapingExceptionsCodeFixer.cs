@@ -16,7 +16,11 @@ public sealed class DocumentEscapingExceptionsCodeFixer : CodeFixProvider
 {
     private const string EquivalenceKey = "DocumentEscapingExceptions";
 
-    public override ImmutableArray<string> FixableDiagnosticIds => [RuleIdentifiers.KnownExceptionMayEscapeIdentifier];
+    public override ImmutableArray<string> FixableDiagnosticIds =>
+    [
+        RuleIdentifiers.KnownExceptionMayEscapeIdentifier,
+        RuleIdentifiers.DocumentedExceptionMayEscapeIdentifier,
+    ];
 
     public override FixAllProvider? GetFixAllProvider() => null;
 

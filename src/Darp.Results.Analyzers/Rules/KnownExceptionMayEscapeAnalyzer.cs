@@ -11,28 +11,14 @@ namespace Darp.Results.Analyzers.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
 {
-    private const string AllowedExceptionTypesOption =
-        "dotnet_diagnostic." + RuleIdentifiers.KnownExceptionMayEscapeIdentifier + ".allowed_exception_types";
-
-    private static readonly ImmutableArray<string> s_defaultAllowedExceptionTypeNames =
-    [
-        "System.ArgumentException",
-        "System.OperationCanceledException",
-        "System.NotImplementedException",
-        "System.NotSupportedException",
-        "System.Diagnostics.UnreachableException",
-        "System.ObjectDisposedException",
-        "System.Runtime.CompilerServices.SwitchExpressionException",
-    ];
-
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.KnownExceptionMayEscapeIdentifier,
-        title: "Known exception may escape a Result-returning function",
+        title: "Explicit exception may escape a Result-returning function",
         messageFormat: "The following exception types may escape this Result-returning function: {0}. Catch and return them as errors, or document them with exception elements.",
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Known exceptions should be returned through the Result error channel, explicitly allowed, or declared in the function's XML documentation.",
+        description: "Explicitly thrown exceptions should be returned through the Result error channel, explicitly allowed, or declared in the function's XML documentation.",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.KnownExceptionMayEscapeIdentifier)
     );
 
@@ -47,27 +33,37 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var state = new AnalyzerState(compilationContext.Compilation, compilationContext.Options.AdditionalFiles);
-            compilationContext.RegisterOperationAction(
-                operationContext => AnalyzeThrow(operationContext, state),
-                OperationKind.Throw
+            var state = new ExceptionEscapeAnalysis.AnalyzerState(
+                compilationContext.Compilation,
+                compilationContext.Options.AdditionalFiles,
+                RuleIdentifiers.KnownExceptionMayEscapeIdentifier
             );
             compilationContext.RegisterOperationAction(
-                operationContext => AnalyzeDocumentedMember(operationContext, state),
-                OperationKind.Invocation,
-                OperationKind.ObjectCreation,
-                OperationKind.PropertyReference,
-                OperationKind.Binary,
-                OperationKind.Unary,
-                OperationKind.Conversion,
-                OperationKind.CompoundAssignment,
-                OperationKind.Increment,
-                OperationKind.Decrement
+                operationContext => ExceptionEscapeAnalysis.AnalyzeThrow(operationContext, state, s_rule),
+                OperationKind.Throw
             );
         });
     }
+}
 
-    private static void AnalyzeThrow(OperationAnalysisContext context, AnalyzerState state)
+internal static class ExceptionEscapeAnalysis
+{
+    private static readonly ImmutableArray<string> s_defaultAllowedExceptionTypeNames =
+    [
+        "System.ArgumentException",
+        "System.OperationCanceledException",
+        "System.NotImplementedException",
+        "System.NotSupportedException",
+        "System.Diagnostics.UnreachableException",
+        "System.ObjectDisposedException",
+        "System.Runtime.CompilerServices.SwitchExpressionException",
+    ];
+
+    internal static void AnalyzeThrow(
+        OperationAnalysisContext context,
+        AnalyzerState state,
+        DiagnosticDescriptor rule
+    )
     {
         IMethodSymbol? containingFunction = GetContainingFunction(context.Operation, context.ContainingSymbol);
         if (containingFunction is null || !containingFunction.ReturnType.IsResultReturningType())
@@ -78,10 +74,14 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
         if (exceptionType is null || IsPermitted(context, state, containingFunction, exceptionType, context.Operation))
             return;
 
-        ReportDiagnostic(context, operation, [exceptionType]);
+        ReportDiagnostic(context, operation, [exceptionType], rule);
     }
 
-    private static void AnalyzeDocumentedMember(OperationAnalysisContext context, AnalyzerState state)
+    internal static void AnalyzeDocumentedMember(
+        OperationAnalysisContext context,
+        AnalyzerState state,
+        DiagnosticDescriptor rule
+    )
     {
         if (IsInsideNameOf(context.Operation))
             return;
@@ -96,6 +96,17 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
         IMethodSymbol? containingFunction = GetContainingFunction(context.Operation, context.ContainingSymbol);
         if (containingFunction is null || !containingFunction.ReturnType.IsResultReturningType())
             return;
+        if (
+            state.IsExcludedMember(
+                context.Options.AnalyzerConfigOptionsProvider,
+                context.Operation.Syntax.SyntaxTree,
+                invokedMember,
+                receiverType
+            )
+        )
+        {
+            return;
+        }
 
         ImmutableArray<INamedTypeSymbol> documentedExceptions = GetDocumentedExceptions(
             state,
@@ -114,7 +125,7 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
         }
 
         if (escapingExceptions.Count > 0)
-            ReportDiagnostic(context, context.Operation, escapingExceptions.ToImmutable());
+            ReportDiagnostic(context, context.Operation, escapingExceptions.ToImmutable(), rule);
     }
 
     private static bool IsInsideNameOf(IOperation operation)
@@ -384,7 +395,8 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
     private static void ReportDiagnostic(
         OperationAnalysisContext context,
         IOperation operation,
-        ImmutableArray<INamedTypeSymbol> exceptionTypes
+        ImmutableArray<INamedTypeSymbol> exceptionTypes,
+        DiagnosticDescriptor rule
     )
     {
         string[] displayNames = exceptionTypes
@@ -403,7 +415,7 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
             string.Join(";", documentationIds)
         );
         context.ReportDiagnostic(
-            Diagnostic.Create(s_rule, operation.Syntax.GetLocation(), properties, string.Join(", ", displayNames))
+            Diagnostic.Create(rule, operation.Syntax.GetLocation(), properties, string.Join(", ", displayNames))
         );
     }
 
@@ -417,8 +429,16 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
         builder.Add(exceptionType);
     }
 
-    private sealed class AnalyzerState(Compilation compilation, ImmutableArray<AdditionalText> additionalFiles)
+    internal sealed class AnalyzerState(
+        Compilation compilation,
+        ImmutableArray<AdditionalText> additionalFiles,
+        string ruleIdentifier
+    )
     {
+        private readonly string _allowedExceptionTypesOption =
+            "dotnet_diagnostic." + ruleIdentifier + ".allowed_exception_types";
+        private readonly string _excludedMembersOption =
+            "dotnet_diagnostic." + ruleIdentifier + ".excluded_members";
         private readonly ConcurrentDictionary<ISymbol, ImmutableArray<INamedTypeSymbol>> _declaredExceptions = new(
             SymbolEqualityComparer.Default
         );
@@ -426,6 +446,7 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
             SyntaxTree,
             ImmutableArray<INamedTypeSymbol>
         > _configuredAllowedExceptions = new();
+        private readonly ConcurrentDictionary<SyntaxTree, ImmutableHashSet<string>> _configuredExcludedMembers = new();
         private readonly Dictionary<string, ImmutableArray<AdditionalText>> _additionalDocumentationByAssembly =
             CreateAdditionalDocumentationMap(additionalFiles);
         private readonly INamedTypeSymbol? _exceptionType = compilation.GetTypeByMetadataName("System.Exception");
@@ -448,8 +469,8 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
                 {
                     AnalyzerConfigOptions options = optionsProvider.GetOptions(tree);
                     IEnumerable<string> configuredTypeNames = s_defaultAllowedExceptionTypeNames;
-                    if (options.TryGetValue(AllowedExceptionTypesOption, out string? configuredValue))
-                        configuredTypeNames = configuredValue.Split(';');
+                    if (options.TryGetValue(_allowedExceptionTypesOption, out string? configuredValue))
+                        configuredTypeNames = configuredValue.Split('|', ';');
 
                     var builder = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
                     foreach (string configuredTypeName in configuredTypeNames)
@@ -466,6 +487,44 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
                     return builder.ToImmutable();
                 }
             );
+        }
+
+        public bool IsExcludedMember(
+            AnalyzerConfigOptionsProvider optionsProvider,
+            SyntaxTree syntaxTree,
+            ISymbol symbol,
+            INamedTypeSymbol? receiverType
+        )
+        {
+            ImmutableHashSet<string> excludedMembers = _configuredExcludedMembers.GetOrAdd(
+                syntaxTree,
+                tree =>
+                {
+                    AnalyzerConfigOptions options = optionsProvider.GetOptions(tree);
+                    if (!options.TryGetValue(_excludedMembersOption, out string? configuredValue))
+                        return ImmutableHashSet<string>.Empty;
+
+                    return configuredValue
+                        .Split('|')
+                        .Select(member => member.Trim())
+                        .Where(member => member.Length > 0)
+                        .ToImmutableHashSet(StringComparer.Ordinal);
+                }
+            );
+            if (excludedMembers.Count == 0)
+                return false;
+
+            foreach (ISymbol candidate in GetDocumentationCandidates(symbol, receiverType))
+            {
+                if (
+                    candidate.GetDocumentationCommentId() is { } documentationId
+                    && excludedMembers.Contains(documentationId)
+                )
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private INamedTypeSymbol? GetConfiguredExceptionType(string configuredTypeName)
