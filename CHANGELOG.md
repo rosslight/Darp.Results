@@ -4,6 +4,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Content is taken from conventional commits and aggregated in a [release-please](https://github.com/googleapis/release-please) PR.
 
+## [1.7.0](https://github.com/rosslight/Darp.Results/compare/v1.6.0...v1.7.0) (2026-08-01)
+
+
+### Features
+
+* **analyzers:** split documented exception diagnostics ([ef9d653](https://github.com/rosslight/Darp.Results/commit/ef9d653c3d23269dbcda216ea3b35efa45dd3691))
+
+
+### Bug Fixes
+
+* **analyzers:** allow semaphore full exceptions ([c555a0c](https://github.com/rosslight/Darp.Results/commit/c555a0c292999ea697fee67921b14beae9c9b4ff))
+
 ## [1.6.0](https://github.com/rosslight/Darp.Results/compare/v1.5.0...v1.6.0) (2026-08-01)
 
 
