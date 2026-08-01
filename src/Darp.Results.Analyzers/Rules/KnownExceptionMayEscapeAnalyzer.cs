@@ -47,8 +47,7 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
 
 internal static class ExceptionEscapeAnalysis
 {
-    private const string AllowedExceptionTypesOption =
-        "dotnet_code_quality.darp_results_allowed_exception_types";
+    private const string AllowedExceptionTypesOption = "dotnet_code_quality.darp_results_allowed_exception_types";
     private const string ExcludedMembersOption =
         "dotnet_code_quality." + RuleIdentifiers.DocumentedExceptionMayEscapeIdentifier + ".excluded_members";
 
@@ -64,11 +63,7 @@ internal static class ExceptionEscapeAnalysis
         "System.Threading.SemaphoreFullException",
     ];
 
-    internal static void AnalyzeThrow(
-        OperationAnalysisContext context,
-        AnalyzerState state,
-        DiagnosticDescriptor rule
-    )
+    internal static void AnalyzeThrow(OperationAnalysisContext context, AnalyzerState state, DiagnosticDescriptor rule)
     {
         IMethodSymbol? containingFunction = GetContainingFunction(context.Operation, context.ContainingSymbol);
         if (containingFunction is null || !containingFunction.ReturnType.IsResultReturningType())
@@ -130,7 +125,22 @@ internal static class ExceptionEscapeAnalysis
         }
 
         if (escapingExceptions.Count > 0)
-            ReportDiagnostic(context, context.Operation, escapingExceptions.ToImmutable(), rule);
+        {
+            string? memberDocumentationId = GetDocumentationCandidates(invokedMember, receiverType)
+                .Select(candidate => candidate.GetDocumentationCommentId())
+                .FirstOrDefault(documentationId => documentationId is not null);
+            ReportDiagnostic(
+                context,
+                context.Operation,
+                escapingExceptions.ToImmutable(),
+                rule,
+                memberDocumentationId,
+                GetConfiguredExcludedMembersValue(
+                    context.Options.AnalyzerConfigOptionsProvider,
+                    context.Operation.Syntax.SyntaxTree
+                )
+            );
+        }
     }
 
     private static bool IsInsideNameOf(IOperation operation)
@@ -362,6 +372,15 @@ internal static class ExceptionEscapeAnalysis
         return false;
     }
 
+    private static string? GetConfiguredExcludedMembersValue(
+        AnalyzerConfigOptionsProvider optionsProvider,
+        SyntaxTree syntaxTree
+    )
+    {
+        AnalyzerConfigOptions options = optionsProvider.GetOptions(syntaxTree);
+        return options.TryGetValue(ExcludedMembersOption, out string? configuredValue) ? configuredValue : null;
+    }
+
     private static bool IsCaught(IOperation operation, INamedTypeSymbol exceptionType, Compilation compilation)
     {
         IOperation child = operation;
@@ -391,10 +410,7 @@ internal static class ExceptionEscapeAnalysis
         return false;
     }
 
-    private static bool IsCatchFilterAlwaysTrue(
-        ICatchClauseOperation catchClause,
-        INamedTypeSymbol exceptionType
-    )
+    private static bool IsCatchFilterAlwaysTrue(ICatchClauseOperation catchClause, INamedTypeSymbol exceptionType)
     {
         if (catchClause.Filter is null)
             return true;
@@ -433,20 +449,22 @@ internal static class ExceptionEscapeAnalysis
             && SymbolEqualityComparer.Default.Equals(localReference.Local, declarator.Symbol);
     }
 
-    private static bool IsPatternGuaranteedToMatch(
-        IPatternOperation pattern,
-        INamedTypeSymbol exceptionType
-    )
+    private static bool IsPatternGuaranteedToMatch(IPatternOperation pattern, INamedTypeSymbol exceptionType)
     {
         return pattern switch
         {
-            ITypePatternOperation { MatchedType: INamedTypeSymbol matchedType } =>
-                IsSameOrDerivedFrom(exceptionType, matchedType),
-            IDeclarationPatternOperation { MatchedType: INamedTypeSymbol matchedType } =>
-                IsSameOrDerivedFrom(exceptionType, matchedType),
-            IBinaryPatternOperation { OperatorKind: BinaryOperatorKind.Or } binary =>
-                IsPatternGuaranteedToMatch(binary.LeftPattern, exceptionType)
-                || IsPatternGuaranteedToMatch(binary.RightPattern, exceptionType),
+            ITypePatternOperation { MatchedType: INamedTypeSymbol matchedType } => IsSameOrDerivedFrom(
+                exceptionType,
+                matchedType
+            ),
+            IDeclarationPatternOperation { MatchedType: INamedTypeSymbol matchedType } => IsSameOrDerivedFrom(
+                exceptionType,
+                matchedType
+            ),
+            IBinaryPatternOperation { OperatorKind: BinaryOperatorKind.Or } binary => IsPatternGuaranteedToMatch(
+                binary.LeftPattern,
+                exceptionType
+            ) || IsPatternGuaranteedToMatch(binary.RightPattern, exceptionType),
             _ => false,
         };
     }
@@ -465,7 +483,9 @@ internal static class ExceptionEscapeAnalysis
         OperationAnalysisContext context,
         IOperation operation,
         ImmutableArray<INamedTypeSymbol> exceptionTypes,
-        DiagnosticDescriptor rule
+        DiagnosticDescriptor rule,
+        string? memberDocumentationId = null,
+        string? configuredExcludedMembers = null
     )
     {
         string[] displayNames = exceptionTypes
@@ -479,12 +499,19 @@ internal static class ExceptionEscapeAnalysis
             .Distinct(StringComparer.Ordinal)
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray()!;
-        ImmutableDictionary<string, string?> properties = ImmutableDictionary<string, string?>.Empty.Add(
-            "ExceptionTypes",
-            string.Join(";", documentationIds)
-        );
+        ImmutableDictionary<string, string?>.Builder properties = ImmutableDictionary.CreateBuilder<string, string?>();
+        properties.Add("ExceptionTypes", string.Join(";", documentationIds));
+        if (memberDocumentationId is not null)
+            properties.Add("MemberDocumentationId", memberDocumentationId);
+        if (configuredExcludedMembers is not null)
+            properties.Add("ConfiguredExcludedMembers", configuredExcludedMembers);
         context.ReportDiagnostic(
-            Diagnostic.Create(rule, operation.Syntax.GetLocation(), properties, string.Join(", ", displayNames))
+            Diagnostic.Create(
+                rule,
+                operation.Syntax.GetLocation(),
+                properties.ToImmutable(),
+                string.Join(", ", displayNames)
+            )
         );
     }
 
