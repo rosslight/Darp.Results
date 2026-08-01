@@ -34,4 +34,6 @@
     <Using Include="Xunit" />
     <Using Include="Darp.Results.Result" Static="True" />
   </ItemGroup>
+
+  <Import Project="..\..\src\Darp.Results\buildTransitive\Darp.Results.targets" />
 </Project>
