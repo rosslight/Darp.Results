@@ -313,6 +313,32 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
     }
 
     [Fact]
+    public async Task CatchVariableSingleTypeFilter_ShouldHandleMatchingException()
+    {
+        const string source = """
+            using Darp.Results;
+            using System;
+
+            static class TestClass
+            {
+                static Result<int, string> Run()
+                {
+                    try
+                    {
+                        throw new InvalidOperationException();
+                    }
+                    catch (Exception exception) when (exception is InvalidOperationException)
+                    {
+                        return "invalid operation";
+                    }
+                }
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
     public async Task CatchVariableOrTypePattern_ShouldHandleMatchingExceptions()
     {
         const string source = """

@@ -417,6 +417,14 @@ internal static class ExceptionEscapeAnalysis
         if (catchClause.Filter.ConstantValue is { HasValue: true, Value: true })
             return true;
         if (
+            catchClause.Filter
+                is IIsTypeOperation { IsNegated: false, TypeOperand: INamedTypeSymbol matchedType } isType
+            && ReferencesCatchVariable(isType.ValueOperand, catchClause)
+        )
+        {
+            return IsSameOrDerivedFrom(exceptionType, matchedType);
+        }
+        if (
             catchClause.Filter is not IIsPatternOperation isPattern
             || !ReferencesCatchVariable(isPattern.Value, catchClause)
         )
