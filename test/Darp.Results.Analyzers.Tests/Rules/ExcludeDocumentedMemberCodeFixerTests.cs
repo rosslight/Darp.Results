@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Testing.Verifiers;
+using Microsoft.CodeAnalysis.Text;
 using Xunit;
 
 namespace Darp.Results.Analyzers.Tests.Rules;
@@ -121,6 +122,31 @@ public sealed class ExcludeDocumentedMemberCodeFixerTests
             """;
 
         await VerifyAsync(source, fixedSource, editorConfig, fixedEditorConfig);
+    }
+
+    [Fact]
+    public void StaleDiagnostic_ShouldAppendToCurrentExcludedMembers()
+    {
+        const string editorConfig = """
+            root = true
+
+            [*.cs]
+            dotnet_code_quality.DR0005.excluded_members = P:System.Array.Length|P:System.String.Length
+            """;
+        const string fixedEditorConfig = """
+            root = true
+
+            [*.cs]
+            dotnet_code_quality.DR0005.excluded_members = P:System.Array.Length|P:System.String.Length|M:Test.Dependency.Read
+            """;
+
+        SourceText updatedText = ExcludeDocumentedMemberCodeFixer.UpdateEditorConfig(
+            SourceText.From(editorConfig),
+            "P:System.Array.Length",
+            "M:Test.Dependency.Read"
+        );
+
+        Assert.Equal(fixedEditorConfig, updatedText.ToString());
     }
 
     [Fact]

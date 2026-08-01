@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Darp.Results.Analyzers.Tests" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Darp.Results.Analyzers\RuleIdentifiers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Darp.Results.Analyzers\Helpers.cs" />
     <None Include="$(MSBuildThisFileDirectory)\..\Darp.Results.Analyzers\README.md" Pack="true" PackagePath="/" />

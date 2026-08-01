@@ -89,29 +89,36 @@ public sealed class ExcludeDocumentedMemberCodeFixer : CodeFixProvider
         return solution.WithAnalyzerConfigDocumentText(editorConfigId, updatedText);
     }
 
-    private static SourceText UpdateEditorConfig(SourceText text, string? configuredMembers, string memberId)
+    internal static SourceText UpdateEditorConfig(SourceText text, string? configuredMembers, string memberId)
     {
         string currentValue = NormalizeMembers(configuredMembers);
-        string updatedValue = NormalizeMembers(configuredMembers, memberId);
-        TextLine? settingLine = text
-            .Lines.Where(line =>
-                TryGetSettingValue(text.ToString(line.Span), out string? value)
-                && NormalizeMembers(value) == currentValue
-            )
-            .Select(line => (TextLine?)line)
-            .LastOrDefault();
-
-        if (settingLine is { } line)
+        (TextLine Line, string Value)? exactSetting = null;
+        (TextLine Line, string Value)? updatedSetting = null;
+        foreach (TextLine line in text.Lines)
         {
-            string oldLine = text.ToString(line.Span);
+            if (!TryGetSettingValue(text.ToString(line.Span), out string? value))
+                continue;
+
+            string normalizedValue = NormalizeMembers(value);
+            if (normalizedValue == currentValue)
+                exactSetting = (line, normalizedValue);
+            else if (ContainsAllMembers(normalizedValue, currentValue))
+                updatedSetting = (line, normalizedValue);
+        }
+
+        if ((exactSetting ?? updatedSetting) is { } existingSetting)
+        {
+            string updatedValue = NormalizeMembers(existingSetting.Value, memberId);
+            string oldLine = text.ToString(existingSetting.Line.Span);
             string indentation = oldLine.Substring(0, oldLine.Length - oldLine.TrimStart().Length);
             return text.WithChanges(
-                new TextChange(line.Span, indentation + ExcludedMembersOption + " = " + updatedValue)
+                new TextChange(existingSetting.Line.Span, indentation + ExcludedMembersOption + " = " + updatedValue)
             );
         }
 
+        string newValue = NormalizeMembers(configuredMembers, memberId);
         string newLine = GetNewLine(text);
-        string setting = ExcludedMembersOption + " = " + updatedValue;
+        string setting = ExcludedMembersOption + " = " + newValue;
         if (FindLastCSharpSectionEnd(text) is { } position)
         {
             bool endsWithLineBreak = text.Length > 0 && text[text.Length - 1] is '\r' or '\n';
@@ -142,6 +149,15 @@ public sealed class ExcludeDocumentedMemberCodeFixer : CodeFixProvider
             "|",
             members.Select(member => member.Trim()).Where(member => member.Length > 0).Distinct(StringComparer.Ordinal)
         );
+    }
+
+    private static bool ContainsAllMembers(string value, string requiredValue)
+    {
+        string[] members = NormalizeMembers(value).Split('|');
+        return NormalizeMembers(requiredValue)
+            .Split('|')
+            .Where(member => member.Length > 0)
+            .All(member => members.Contains(member, StringComparer.Ordinal));
     }
 
     private static bool TryGetSettingValue(string line, out string? value)
