@@ -4,6 +4,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Content is taken from conventional commits and aggregated in a [release-please](https://github.com/googleapis/release-please) PR.
 
+## [1.9.0](https://github.com/rosslight/Darp.Results/compare/v1.8.0...v1.9.0) (2026-08-01)
+
+
+### Features
+
+* **analyzers:** disable exception warnings in tests ([2e85f18](https://github.com/rosslight/Darp.Results/commit/2e85f186b8f3c049891dde1a38293743ca9c8a3b))
+
+
+### Bug Fixes
+
+* **analyzers:** preserve concurrent member exclusions ([2e3e033](https://github.com/rosslight/Darp.Results/commit/2e3e033384b294ea8d1c4425c9d601a88593fc3d))
+
 ## [1.8.0](https://github.com/rosslight/Darp.Results/compare/v1.7.0...v1.8.0) (2026-08-01)
 
 
