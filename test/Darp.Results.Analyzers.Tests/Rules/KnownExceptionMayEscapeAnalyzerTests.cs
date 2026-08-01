@@ -340,6 +340,54 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
     }
 
     [Fact]
+    public async Task TaskValuedPropertyReadInsideTryButAwaitedOutside_ShouldWarn()
+    {
+        const string source = """
+            using Darp.Results;
+            using System.IO;
+            using System.Threading.Tasks;
+
+            static class Dependency
+            {
+                /// <exception cref="IOException">Reading failed.</exception>
+                internal static Task<int> Value => Task.FromResult(0);
+            }
+
+            static class TestClass
+            {
+                static async Task<Result<int, string>> RunOutside()
+                {
+                    Task<int> task;
+                    try
+                    {
+                        task = {|DR0004:Dependency.Value|};
+                    }
+                    catch (IOException)
+                    {
+                        return "read error";
+                    }
+
+                    return await task;
+                }
+
+                static async Task<Result<int, string>> RunInside()
+                {
+                    try
+                    {
+                        return await Dependency.Value;
+                    }
+                    catch (IOException)
+                    {
+                        return "read error";
+                    }
+                }
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
     public async Task TaskDirectlyAwaitedInsideTry_ShouldNotWarn()
     {
         const string source = """

@@ -197,7 +197,13 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
 
     private static IOperation? GetCatchSite(IOperation operation, ISymbol invokedMember)
     {
-        if (invokedMember is not IMethodSymbol method || !method.ReturnType.IsTaskLike())
+        ITypeSymbol? resultType = invokedMember switch
+        {
+            IMethodSymbol method => method.ReturnType,
+            IPropertySymbol property => property.Type,
+            _ => null,
+        };
+        if (resultType is null || !resultType.IsTaskLike())
             return operation;
 
         IOperation current = operation;

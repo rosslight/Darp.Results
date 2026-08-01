@@ -16,8 +16,7 @@ public sealed class DocumentEscapingExceptionsCodeFixer : CodeFixProvider
 {
     private const string EquivalenceKey = "DocumentEscapingExceptions";
 
-    public override ImmutableArray<string> FixableDiagnosticIds =>
-        [RuleIdentifiers.KnownExceptionMayEscapeIdentifier];
+    public override ImmutableArray<string> FixableDiagnosticIds => [RuleIdentifiers.KnownExceptionMayEscapeIdentifier];
 
     public override FixAllProvider? GetFixAllProvider() => null;
 
@@ -30,8 +29,8 @@ public sealed class DocumentEscapingExceptionsCodeFixer : CodeFixProvider
         if (declaration is null)
             return;
 
-        SemanticModel? semanticModel = await context.Document
-            .GetSemanticModelAsync(context.CancellationToken)
+        SemanticModel? semanticModel = await context
+            .Document.GetSemanticModelAsync(context.CancellationToken)
             .ConfigureAwait(false);
         if (semanticModel is null)
             return;
@@ -54,12 +53,8 @@ public sealed class DocumentEscapingExceptionsCodeFixer : CodeFixProvider
         context.RegisterCodeFix(
             CodeAction.Create(
                 title,
-                cancellationToken => AddExceptionDocumentation(
-                    context.Document,
-                    declaration,
-                    exceptions,
-                    cancellationToken
-                ),
+                cancellationToken =>
+                    AddExceptionDocumentation(context.Document, declaration, exceptions, cancellationToken),
                 equivalenceKey: EquivalenceKey
             ),
             context.Diagnostics
@@ -111,15 +106,13 @@ public sealed class DocumentEscapingExceptionsCodeFixer : CodeFixProvider
                 exceptions.Add(
                     new ExceptionDocumentation(
                         documentationId,
-                        exceptionType.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat)
+                        exceptionType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
                     )
                 );
             }
         }
 
-        return exceptions
-            .OrderBy(exception => exception.Cref, StringComparer.Ordinal)
-            .ToImmutableArray();
+        return exceptions.OrderBy(exception => exception.Cref, StringComparer.Ordinal).ToImmutableArray();
     }
 
     private static async Task<Document> AddExceptionDocumentation(
@@ -147,12 +140,11 @@ public sealed class DocumentEscapingExceptionsCodeFixer : CodeFixProvider
         SourceText text = await document.GetTextAsync(cancellationToken).ConfigureAwait(false);
         string newLine = GetNewLine(text);
         TextLine declarationLine = text.Lines.GetLineFromPosition(declaration.SpanStart);
-        string linePrefix = text.ToString(
-            TextSpan.FromBounds(declarationLine.Start, declaration.SpanStart)
-        );
+        string linePrefix = text.ToString(TextSpan.FromBounds(declarationLine.Start, declaration.SpanStart));
         bool startsOnOwnLine = linePrefix.All(char.IsWhiteSpace);
         string indentation = startsOnOwnLine ? linePrefix : string.Empty;
-        string documentation = (startsOnOwnLine ? string.Empty : newLine)
+        string documentation =
+            (startsOnOwnLine ? string.Empty : newLine)
             + string.Join(
                 newLine + indentation,
                 exceptionsToAdd.Select(exception =>
@@ -215,11 +207,7 @@ public sealed class DocumentEscapingExceptionsCodeFixer : CodeFixProvider
 
     private static string EscapeXmlAttribute(string value)
     {
-        return value
-            .Replace("&", "&amp;")
-            .Replace("\"", "&quot;")
-            .Replace("<", "&lt;")
-            .Replace(">", "&gt;");
+        return value.Replace("&", "&amp;").Replace("\"", "&quot;").Replace("<", "&lt;").Replace(">", "&gt;");
     }
 
     private readonly struct ExceptionDocumentation(string documentationId, string cref)
