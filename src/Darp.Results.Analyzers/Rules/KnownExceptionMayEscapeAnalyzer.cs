@@ -542,7 +542,12 @@ public sealed class KnownExceptionMayEscapeAnalyzer : DiagnosticAnalyzer
                         interfaceMember
                     );
                     if (SymbolEqualityComparer.Default.Equals(implementation, symbol))
+                    {
                         yield return interfaceMember;
+                        ISymbol definition = interfaceMember.OriginalDefinition;
+                        if (!SymbolEqualityComparer.Default.Equals(interfaceMember, definition))
+                            yield return definition;
+                    }
                 }
             }
         }

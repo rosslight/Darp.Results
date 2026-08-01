@@ -512,6 +512,52 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
     }
 
     [Fact]
+    public async Task ExceptionFromReferencedGenericInterfaceDocumentationAdditionalFile_ShouldWarn()
+    {
+        const string dependencySource = """
+            namespace Dependency;
+
+            public interface IReader<T>
+            {
+                T Read();
+            }
+            """;
+        const string source = """
+            using Darp.Results;
+            using Dependency;
+
+            sealed class Reader : IReader<int>
+            {
+                public int Read() => 0;
+            }
+
+            static class TestClass
+            {
+                static Result<int, string> Run(Reader reader) => {|DR0004:reader.Read()|};
+            }
+            """;
+        const string documentation = """
+            <?xml version="1.0"?>
+            <doc>
+              <assembly>
+                <name>Dependency</name>
+              </assembly>
+              <members>
+                <member name="M:Dependency.IReader`1.Read">
+                  <exception cref="T:System.InvalidOperationException"></exception>
+                </member>
+              </members>
+            </doc>
+            """;
+
+        var test = new ResultAnalyzerTest<KnownExceptionMayEscapeAnalyzer> { TestCode = source };
+        test.TestState.AdditionalProjects["Dependency"].Sources.Add(dependencySource);
+        test.TestState.AdditionalProjectReferences.Add("Dependency");
+        test.TestState.AdditionalFiles.Add(("Dependency.xml", documentation));
+        await test.RunAsync(CancellationToken.None);
+    }
+
+    [Fact]
     public async Task ImplicitInterfaceException_ShouldPermitImplementationThrow()
     {
         const string source = """
