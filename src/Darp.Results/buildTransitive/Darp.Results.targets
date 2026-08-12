@@ -14,11 +14,40 @@
     DependsOnTargets="ResolveReferences"
   >
     <ItemGroup>
+      <!-- PackageReference contains direct dependencies; Analyzer confirms that the asset was not excluded. -->
+      <_DarpResultsDirectPackageReference
+        Include="@(PackageReference)"
+        Condition="'%(PackageReference.Identity)' == 'Darp.Results'"
+      />
+      <_DarpResultsAnalyzer Include="@(Analyzer)" Condition="'%(Analyzer.Filename)' == 'Darp.Results.Analyzers'" />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <DarpResultsAnalyzeReferenceDocumentation Condition="'@(_DarpResultsAnalyzer)' == ''"
+        >false</DarpResultsAnalyzeReferenceDocumentation>
+      <DarpResultsAnalyzeReferenceDocumentation
+        Condition="'$(DarpResultsAnalyzeReferenceDocumentation)' == '' and '@(_DarpResultsDirectPackageReference)' != ''"
+        >true</DarpResultsAnalyzeReferenceDocumentation>
+      <DarpResultsAnalyzeReferenceDocumentation Condition="'$(DarpResultsAnalyzeReferenceDocumentation)' == ''"
+        >false</DarpResultsAnalyzeReferenceDocumentation>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(DarpResultsAnalyzeReferenceDocumentation)' == 'true'">
       <_DarpResultsReferenceDocumentation
         Include="@(ReferencePath->'%(RootDir)%(Directory)%(Filename).xml')"
         Condition="Exists('%(ReferencePath.RootDir)%(ReferencePath.Directory)%(ReferencePath.Filename).xml')"
       />
-      <AdditionalFiles Include="@(_DarpResultsReferenceDocumentation)" />
+      <!-- AdditionalFiles is shared by all analyzers, so keep these copies away from XML-only generators. -->
+      <_DarpResultsAnalyzerDocumentation Include="@(_DarpResultsReferenceDocumentation->'$(IntermediateOutputPath)Darp.Results.ReferenceDocumentation\%(Filename).darpresultsdocs')" />
+    </ItemGroup>
+    <Copy
+      Condition="'$(DarpResultsAnalyzeReferenceDocumentation)' == 'true'"
+      SourceFiles="@(_DarpResultsReferenceDocumentation)"
+      DestinationFiles="@(_DarpResultsAnalyzerDocumentation)"
+      SkipUnchangedFiles="true"
+    />
+    <ItemGroup Condition="'$(DarpResultsAnalyzeReferenceDocumentation)' == 'true'">
+      <AdditionalFiles Include="@(_DarpResultsAnalyzerDocumentation)" />
     </ItemGroup>
   </Target>
 </Project>
