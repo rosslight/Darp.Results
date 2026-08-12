@@ -4,6 +4,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Content is taken from conventional commits and aggregated in a [release-please](https://github.com/googleapis/release-please) PR.
 
+## [1.9.1](https://github.com/rosslight/Darp.Results/compare/v1.9.0...v1.9.1) (2026-08-12)
+
+
+### Bug Fixes
+
+* analyzer xml doc inputs do not leak to other analyzers ([#30](https://github.com/rosslight/Darp.Results/issues/30)) ([c59fd5e](https://github.com/rosslight/Darp.Results/commit/c59fd5e7890ccf1d00bb18c0379a6c0bc48a2a6e))
+
 ## [1.9.0](https://github.com/rosslight/Darp.Results/compare/v1.8.0...v1.9.0) (2026-08-01)
 
 
