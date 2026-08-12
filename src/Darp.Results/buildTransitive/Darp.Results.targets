@@ -18,7 +18,18 @@
         Include="@(ReferencePath->'%(RootDir)%(Directory)%(Filename).xml')"
         Condition="Exists('%(ReferencePath.RootDir)%(ReferencePath.Directory)%(ReferencePath.Filename).xml')"
       />
-      <AdditionalFiles Include="@(_DarpResultsReferenceDocumentation)" />
+      <!-- AdditionalFiles is shared by all analyzers, so keep these copies away from XML-only generators. -->
+      <_DarpResultsAnalyzerDocumentation
+        Include="@(_DarpResultsReferenceDocumentation->'$(IntermediateOutputPath)Darp.Results.ReferenceDocumentation\%(Filename).darpresultsdocs')"
+      />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(_DarpResultsReferenceDocumentation)"
+      DestinationFiles="@(_DarpResultsAnalyzerDocumentation)"
+      SkipUnchangedFiles="true"
+    />
+    <ItemGroup>
+      <AdditionalFiles Include="@(_DarpResultsAnalyzerDocumentation)" />
     </ItemGroup>
   </Target>
 </Project>

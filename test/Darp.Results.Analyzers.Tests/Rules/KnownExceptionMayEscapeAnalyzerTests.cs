@@ -792,7 +792,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
         var test = new ResultAnalyzerTest<DocumentedExceptionMayEscapeAnalyzer> { TestCode = source };
         test.TestState.AdditionalProjects["Dependency"].Sources.Add(dependencySource);
         test.TestState.AdditionalProjectReferences.Add("Dependency");
-        test.TestState.AdditionalFiles.Add(("Dependency.xml", documentation));
+        test.TestState.AdditionalFiles.Add(("Dependency.darpresultsdocs", documentation));
         await test.RunAsync(CancellationToken.None);
     }
 
