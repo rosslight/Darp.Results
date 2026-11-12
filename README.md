@@ -12,6 +12,8 @@ A Result type implementation for C# that provides a safe way to handle operation
 - **[Darp.Results](https://www.nuget.org/packages/Darp.Results)** - Core Result type implementation including Analyzers/CodeFixers
 - **[Darp.Results.Shouldly](https://www.nuget.org/packages/Darp.Results.Shouldly)** - [Shouldly](https://github.com/shouldly/shouldly) extensions for Result testing
 
+Both packages target .NET 10 and 11. Building the repository requires the .NET 11 SDK; running all tests also requires the .NET 10 runtime.
+
 ## Quick Start
 
 ```csharp

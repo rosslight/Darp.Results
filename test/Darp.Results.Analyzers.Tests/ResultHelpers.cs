@@ -154,7 +154,7 @@ public static class ResultHelpers
             FixedCode = NormalizeLineEndings(InMethod(fixedSource)),
         };
         test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(Result<,>).Assembly.Location));
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net110;
         test.ExpectedDiagnostics.AddRange(expected);
 
         return test.RunAsync(CancellationToken.None);

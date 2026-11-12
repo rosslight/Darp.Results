@@ -206,7 +206,7 @@ public sealed class DocumentEscapingExceptionsCodeFixerTests
         {
             TestCode = source,
             FixedCode = fixedSource,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net110,
         };
         test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(Result<,>).Assembly.Location));
         return test.RunAsync(CancellationToken.None);
