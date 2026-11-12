@@ -11,6 +11,6 @@ public sealed class ResultAnalyzerTest<TAnalyzer> : CSharpAnalyzerTest<TAnalyzer
     public ResultAnalyzerTest()
     {
         TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(Result<,>).Assembly.Location));
-        ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
+        ReferenceAssemblies = ReferenceAssemblies.Net.Net110;
     }
 }

@@ -199,7 +199,7 @@ public sealed class ExcludeDocumentedMemberCodeFixerTests
         >
         {
             TestCode = source,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net110,
             CodeFixTestBehaviors = CodeFixTestBehaviors.SkipFixAllCheck,
         };
         test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(Result<,>).Assembly.Location));
