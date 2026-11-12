@@ -14,14 +14,16 @@ A Result type implementation for C# that provides a safe way to handle operation
 
 Both packages target .NET 10 and 11. Building the repository requires the .NET 11 SDK; running all tests also requires the .NET 10 runtime.
 
+`Result<TValue, TError>` is a C# 15 union of `Ok<TValue>` and `Err<TError>`, so consumers need C# 15. Projects targeting `net11.0` use it by default. Projects targeting `net10.0` need the .NET 11 SDK and `<LangVersion>15</LangVersion>`; the package brings the required union support types.
+
 ## Quick Start
 
 ```csharp
 using Darp.Results;
 
 // Create Results
-Result<int, string> success = new Result.Ok<int, string>(42);
-Result<int, string> failure = new Result.Err<int, string>("Something went wrong");
+Result<int, string> success = Result.Ok(42);
+Result<int, string> failure = Result.Err("Something went wrong");
 
 // Implicit conversions
 Result<int, string> implicitSuccess = 42;
@@ -31,12 +33,12 @@ Result<int, string> implicitFailure = "error";
 if (result.TryGetValue(out int value)) { /* use value */ }
 if (result.TryGetError(out string error)) { /* handle error */ }
 
-// Switch on result
-return result switch 
+// Switch on result. The compiler checks that both cases are handled.
+return result switch
 {
-    Result.Ok<int, string>(var value) => value,
-    Result.Err<int, string>(var error) => error,
-}
+    Ok<int>(var value) => value,
+    Err<string>(var error) => error,
+};
 ```
 
 ## Why another results library?
@@ -47,7 +49,7 @@ return result switch
 - Immutability
 - Any object should be a possible error type (e.g., enums)
 - Analyzers/CodeFixers
-- Designed to benefit from the [discriminated unions proposal](https://github.com/dotnet/csharplang/tree/main/meetings/working-groups/discriminated-unions)
+- Built on C# 15 [union types](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/union): exhaustive switches and no allocation for the result itself
 
 Existing projects did not fit all the requirements. However, these projects were an inspiration:
 
@@ -66,14 +68,20 @@ Existing projects did not fit all the requirements. However, these projects were
 ```csharp
 // Value to Result
 Result<int, string> result = 42; // Creates Ok(42)
-Result<int, string> result = new Result.Ok<int, string>(42);
-Result<int, string> result = new Result.Ok<int, string>(42, metadata: new Dictionary<string, object>());
+Result<int, string> result = Result.Ok(42);
+Result<int, string> result = new Ok<int>(42);
+Result<int, string> result = new Ok<int>(42, metadata: new Dictionary<string, object>());
 
-// Error to Result  
+// Error to Result
 Result<int, string> result = "error"; // Creates Err("error")
-Result<int, string> result = new Result.Err<int, string>("error");
-Result<int, string> result = new Result.Err<int, string>("error", metadata: new Dictionary<string, object>());
+Result<int, string> result = Result.Err("error");
+Result<int, string> result = new Err<string>("error");
+Result<int, string> result = new Err<string>("error", metadata: new Dictionary<string, object>());
 ```
+
+`Ok<TValue>` converts into any result with that value type and `Err<TError>` into any result with that error type. Both keep their metadata.
+
+`default(Result<TValue, TError>)` is neither Ok nor Err. Switching over it throws, like switching over `null`.
 
 #### Factory Methods
 ```csharp
@@ -97,13 +105,11 @@ bool IsErr { get; } // True if result is error
 ```csharp
 // Extract value
 bool TryGetValue(out TValue value)
-bool TryGetValue(out TValue value, out Result.Err<TNewValue, TError> error)
-bool TryGetValue<TNewValue>(out TValue value, out Result.Err<TNewValue, TError> error)
+bool TryGetValue(out TValue value, out Err<TError> error)
 
 // Extract error
 bool TryGetError(out TError error)
-bool TryGetError(out TError error, out Result.Ok<TValue, TNewError> success)
-bool TryGetError<TNewError>(out TError error, out Result.Ok<TValue, TNewError> success)
+bool TryGetError(out TError error, out Ok<TValue> success)
 
 // Extract with a default value
 TValue Unwrap(TValue defaultValue)           // Returns value or default
@@ -239,8 +245,9 @@ To achieve early returns, rust provides the `?` operator. Due to shortcomings of
 ```csharp
 public Result<string, StandardError> WorkWithResult(Result<int, StandardError> result)
 {
-    if (!result.TryGetValue(out int value, out Result.Err<string, StandardError>? err))
-        return err;
+    if (!result.TryGetValue(out int value, out Err<StandardError> err))
+        return err; // Keeps the metadata of the original result
+
     // ...
     return value.ToString();
 }
@@ -248,9 +255,10 @@ public Result<string, StandardError> WorkWithResult(Result<int, StandardError> r
 
 ### Chaining Operations
 ```csharp
-var result = Result.Ok<int, string>(10)
+Result<int, string> start = 10;
+var result = start
     .Map(x => x * 2)
-    .And(x => x > 15 ? new Result.Ok<string, string>($"Big: {x}") : new Result.Err<string, string>("Too small"))
+    .And(x => x > 15 ? Result.Ok($"Big: {x}") : (Result<string, string>)Result.Err("Too small"))
     .Map(s => s.ToUpper());
 
 result.ShouldHaveValue("BIG: 20");
@@ -263,15 +271,16 @@ public Result<string, StandardError> SwitchOnResult(Result<int, StandardError> r
 {
     return result switch
     {
-        Result.Ok<int, StandardError>(var value, var metadata) => value.ToString(),
-        Result.Err<int, StandardError>(var error, var metadata) => error,
+        Ok<int>(var value, var metadata) => value.ToString(),
+        Err<StandardError>(var error) => error,
     };
 }
 ```
 
 ### With Metadata
 ```csharp
-var result = Result.Ok<int, string>(42)
+Result<int, string> result = Result.Ok(42);
+result = result
     .WithMetadata("operation", "calculation")
     .WithMetadata("timestamp", DateTime.UtcNow);
 

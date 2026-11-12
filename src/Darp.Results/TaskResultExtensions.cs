@@ -72,7 +72,7 @@ public static class TaskResultExtensions
         Func<TValue, TNewValue> resultProvider
     )
     {
-        return task.And<TValue, TError, TNewValue>(value => new Result.Ok<TNewValue, TError>(resultProvider(value)));
+        return task.And<TValue, TError, TNewValue>(value => Result.Ok(resultProvider(value)));
     }
 
     /// <summary>Combines with a result factory if the awaited task is Ok.</summary>
@@ -124,7 +124,7 @@ public static class TaskResultExtensions
         Func<TError, TNewError> resultProvider
     )
     {
-        return task.Or<TValue, TError, TNewError>(error => new Result.Err<TValue, TNewError>(resultProvider(error)));
+        return task.Or<TValue, TError, TNewError>(error => Result.Err(resultProvider(error)));
     }
 
     /// <summary>Returns the awaited result or a replacement error result produced by the factory.</summary>

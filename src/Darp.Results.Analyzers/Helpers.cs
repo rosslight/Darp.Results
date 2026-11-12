@@ -7,23 +7,11 @@ internal static class Helpers
 {
     public const string ResultNamespace = "Darp.Results";
     public const string ResultName = "Result";
-    public const string ResultErrName = "Err";
-    public const string ResultOkName = "Ok";
 
     public static bool IsResult([NotNullWhen(true)] this ITypeSymbol? type)
     {
-        if (type is not INamedTypeSymbol named)
-            return false;
-        if (
-            named is { Arity: 2, OriginalDefinition.Name: ResultName }
-            && named.ContainingNamespace?.ToDisplayString() == ResultNamespace
-        )
-        {
-            return true;
-        }
-        return named.BaseType
-                is { Arity: 2, OriginalDefinition.Name: ResultName, ContainingNamespace: { } containingNamespace }
-            && containingNamespace.ToDisplayString() == ResultNamespace;
+        return type is INamedTypeSymbol { Arity: 2, OriginalDefinition.Name: ResultName } named
+            && named.ContainingNamespace?.ToDisplayString() == ResultNamespace;
     }
 
     public static bool IsResultReturningType(this ITypeSymbol? type)
@@ -40,26 +28,5 @@ internal static class Helpers
         return type is INamedTypeSymbol { Arity: 0 or 1 } named
             && named.ContainingNamespace?.ToDisplayString() == "System.Threading.Tasks"
             && named.OriginalDefinition.Name is "Task" or "ValueTask";
-    }
-
-    public static bool IsErrorResult([NotNullWhen(true)] this ITypeSymbol? type, ITypeSymbol resultType)
-    {
-        if (type is not { Name: ResultErrName })
-            return false;
-        return SymbolEqualityComparer.Default.Equals(type.BaseType, resultType);
-    }
-
-    public static bool IsOkResult([NotNullWhen(true)] this ITypeSymbol? type, ITypeSymbol resultType)
-    {
-        if (type is not { Name: ResultOkName })
-            return false;
-        return SymbolEqualityComparer.Default.Equals(type.BaseType, resultType);
-    }
-
-    public static string GetResultCaseName(ITypeSymbol resultType, string resultCase)
-    {
-        if (resultType is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length != 2)
-            return $"Result.{resultCase}<,>";
-        return $"Result.{resultCase}<{namedTypeSymbol.TypeArguments[0]}, {namedTypeSymbol.TypeArguments[1]}>";
     }
 }

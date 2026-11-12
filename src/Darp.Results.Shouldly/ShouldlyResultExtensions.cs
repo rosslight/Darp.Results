@@ -1,5 +1,4 @@
-﻿using Shouldly;
-using static Darp.Results.Result;
+using Shouldly;
 
 namespace Darp.Results.Shouldly;
 
@@ -17,8 +16,8 @@ public static class ShouldlyResultExtensions
         string? customMessage = null
     )
     {
-        result.ShouldNotBeNull(customMessage ?? "Result should not be null.");
-        if (result.TryGetValue(out TValue? value, out Err<TValue, TError>? error))
+        result.HasCase().ShouldBeTrue(customMessage ?? "Result should be initialized.");
+        if (result.TryGetValue(out TValue? value, out Err<TError> error))
             return value;
         string err = StringifyError(error.Error);
         throw new ShouldAssertException(
@@ -172,9 +171,9 @@ public static class ShouldlyResultExtensions
     /// <returns> The error of the result. </returns>
     public static TError ShouldBeError<TValue, TError>(this Result<TValue, TError> result, string? customMessage = null)
     {
-        result.ShouldNotBeNull(customMessage ?? "Result should not be null.");
+        result.HasCase().ShouldBeTrue(customMessage ?? "Result should be initialized.");
 
-        if (result.TryGetError(out TError? error, out Ok<TValue, TError>? ok))
+        if (result.TryGetError(out TError? error, out Ok<TValue> ok))
             return error;
         string val = StringifyValue(ok.Value);
         throw new ShouldAssertException(
@@ -336,4 +335,6 @@ public static class ShouldlyResultExtensions
             null => "<null>",
             _ => val.ToString() ?? "<null>",
         };
+
+    private static bool HasCase<TValue, TError>(this Result<TValue, TError> result) => result.IsOk || result.IsErr;
 }

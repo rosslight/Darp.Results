@@ -697,7 +697,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
 
             static class TestClass
             {
-                static Result<int, string> Run() => {|DR0005:new Result.Ok<int, string>(1)|};
+                static Result<int, string> Run() => {|DR0005:new Ok<int>(1)|};
             }
             """;
         const string documentation = """
@@ -707,7 +707,7 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
                 <name>Darp.Results</name>
               </assembly>
               <members>
-                <member name="M:Darp.Results.Result.Ok`2.#ctor(`0)">
+                <member name="M:Darp.Results.Ok`1.#ctor(`0)">
                   <exception cref="T:System.IO.IOException">Creation failed.</exception>
                 </member>
               </members>
