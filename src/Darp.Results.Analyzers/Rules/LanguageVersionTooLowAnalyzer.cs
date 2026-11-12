@@ -15,7 +15,7 @@ public sealed class LanguageVersionTooLowAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor s_rule = new(
         RuleIdentifiers.LanguageVersionTooLowIdentifier,
         title: "Darp.Results requires C# 15",
-        messageFormat: "Darp.Results requires C# 15 or later, but this project uses C# {0}. Set <LangVersion>15</LangVersion> or newer, otherwise Ok/Err conversions and switch patterns do not compile.",
+        messageFormat: "Darp.Results requires C# 15 or later, but this project uses C# {0}. Use the .NET 11 SDK and set <LangVersion>15</LangVersion> or newer, otherwise Ok/Err conversions and switch patterns do not compile.",
         RuleCategories.Compatibility,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,

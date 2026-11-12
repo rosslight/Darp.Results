@@ -10,7 +10,12 @@ namespace Darp.Results;
 /// <typeparam name="TError"> The type of the error. </typeparam>
 /// <remarks>
 /// <para> This is a C# 15 union: switch expressions over <see cref="Ok{TValue}"/> and <see cref="Err{TError}"/> are exhaustive. </para>
-/// <para> <c>default(Result)</c> is neither Ok nor Err. Switching over it throws, like switching over <see langword="null"/>. </para>
+/// <para>
+/// <c>default(Result)</c> is neither Ok nor Err. Switching over it throws, like switching over <see langword="null"/>.
+/// Members that need a case also throw <see cref="InvalidOperationException"/> for it: the <c>TryGetValue</c> and
+/// <c>TryGetError</c> overloads with a case parameter, <c>Map</c>, <c>MapError</c>, <c>And</c>, <c>Or</c>,
+/// <c>Unwrap()</c>, <c>Unwrap(Func)</c>, <c>UnwrapError</c>, <c>Expect</c> and <c>ExpectError</c>.
+/// </para>
 /// </remarks>
 [Union]
 [DebuggerDisplay("{ToString(),nq}")]
@@ -102,6 +107,18 @@ public readonly partial struct Result<TValue, TError>
 
     private Ok<TValue> OkCase => Ok<TValue>.Create(_value, _metadata);
     private Err<TError> ErrCase => Err<TError>.Create(_error, _metadata);
+
+    /// <summary> Converts the success case into a result and keeps its metadata. </summary>
+    /// <param name="ok"> The success case. </param>
+    /// <remarks> Declared so the case wins over the value conversion, for example when <typeparamref name="TValue"/> is <see cref="object"/>. </remarks>
+#pragma warning disable CA2225 // Alternative provided through IUnionMembers.Create
+    public static implicit operator Result<TValue, TError>(Ok<TValue> ok) => IUnionMembers.Create(ok);
+
+    /// <summary> Converts the failure case into a result and keeps its metadata. </summary>
+    /// <param name="err"> The failure case. </param>
+    /// <remarks> Declared so the case wins over the value conversion, for example when <typeparamref name="TValue"/> is <see cref="object"/>. </remarks>
+    public static implicit operator Result<TValue, TError>(Err<TError> err) => IUnionMembers.Create(err);
+#pragma warning restore CA2225
 
     /// <summary> Implicitly converts a value to a result in the <see cref="Ok{TValue}"/> state. </summary>
     /// <param name="value"> The value to convert. </param>

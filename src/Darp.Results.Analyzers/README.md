@@ -6,20 +6,14 @@ Roslyn analyzers and code fixers for the Darp.Results library to help developers
 
 The Darp.Results.Analyzers package provides static analysis tools that integrate with Visual Studio, VS Code, and other IDEs to:
 
-- Detect unused `Result<TValue, TError>` return values
+- Detect unused `Result<TValue, TError>`, `Ok<TValue>` and `Err<TError>` return values
 - Detect ignored awaited expressions that produce a `Result<TValue, TError>`
 - Detect explicit and XML-documented exceptions that can escape Result-returning functions
 - Warn when a project consumes Darp.Results with a language version below C# 15
 
 ## Installation
 
-Add the analyzer package to your project:
-
-```xml
-<PackageReference Include="Darp.Results.Analyzers" Version="1.4.0" />
-```
-
-The analyzers will automatically activate in your IDE and during build.
+The analyzers ship inside the `Darp.Results` package; no separate reference is needed. They will automatically activate in your IDE and during build.
 
 ## Rules
 

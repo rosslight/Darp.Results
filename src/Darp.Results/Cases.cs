@@ -25,7 +25,7 @@ public readonly struct Ok<TValue> : IEquatable<Ok<TValue>>
     public Ok(TValue value, IDictionary<string, object> metadata)
     {
         Value = value;
-        _metadata = new ReadOnlyDictionary<string, object>(metadata);
+        _metadata = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>(metadata));
     }
 
     private Ok(TValue value, IReadOnlyDictionary<string, object>? metadata)
@@ -108,7 +108,7 @@ public readonly struct Err<TError> : IEquatable<Err<TError>>
     public Err(TError error, IDictionary<string, object> metadata)
     {
         Error = error;
-        _metadata = new ReadOnlyDictionary<string, object>(metadata);
+        _metadata = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>(metadata));
     }
 
     private Err(TError error, IReadOnlyDictionary<string, object>? metadata)

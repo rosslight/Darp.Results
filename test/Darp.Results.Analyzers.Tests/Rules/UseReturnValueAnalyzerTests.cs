@@ -69,6 +69,24 @@ public sealed class ResultReturnValueUsedAnalyzerTests
         await ResultHelpers.VerifyInMethodAsync<ResultReturnValueUsedAnalyzer>(text, expected);
     }
 
+    [Fact]
+    public async Task CaseReturningMethod_ShouldWarn()
+    {
+        const string text = """
+            Ok<int> MakeOk() => new Ok<int>(1);
+            Err<string> MakeErr() => new Err<string>("x");
+            MakeOk();
+            MakeErr();
+            """;
+
+        DiagnosticResult[] expected =
+        [
+            Verifier.Diagnostic().WithLocation(8, 1).WithArguments("MakeOk"),
+            Verifier.Diagnostic().WithLocation(9, 1).WithArguments("MakeErr"),
+        ];
+        await ResultHelpers.VerifyInMethodAsync<ResultReturnValueUsedAnalyzer>(text, expected);
+    }
+
     // With tasks
 
     [Fact]

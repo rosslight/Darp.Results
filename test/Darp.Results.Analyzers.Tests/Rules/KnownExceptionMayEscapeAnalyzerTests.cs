@@ -63,6 +63,23 @@ public sealed class KnownExceptionMayEscapeAnalyzerTests
     }
 
     [Fact]
+    public async Task ExplicitThrow_InCaseReturningMethod_ShouldWarn()
+    {
+        const string source = """
+            using Darp.Results;
+            using System.IO;
+
+            static class TestClass
+            {
+                static Ok<int> RunOk() => {|DR0004:throw new IOException()|};
+                static Err<string> RunErr() => {|DR0004:throw new IOException()|};
+            }
+            """;
+
+        await VerifyAsync(source);
+    }
+
+    [Fact]
     public async Task ExplicitThrow_OutsideResultReturningMethod_ShouldNotWarn()
     {
         const string source = """

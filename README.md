@@ -14,7 +14,7 @@ A Result type implementation for C# that provides a safe way to handle operation
 
 Both packages target .NET 10 and 11. Building the repository requires the .NET 11 SDK; running all tests also requires the .NET 10 runtime.
 
-`Result<TValue, TError>` is a C# 15 union of `Ok<TValue>` and `Err<TError>`, so consumers need C# 15. Projects targeting `net11.0` use it by default. Projects targeting `net10.0` need the .NET 11 SDK and `<LangVersion>15</LangVersion>`; the package brings the required union support types.
+`Result<TValue, TError>` is a C# 15 union of `Ok<TValue>` and `Err<TError>`, so consumers need C# 15. Projects targeting `net11.0` use it by default. Projects targeting `net10.0` need the .NET 11 SDK and `<LangVersion>15</LangVersion>`; the package contains the union support types needed to consume `Result`.
 
 ## Quick Start
 
@@ -113,7 +113,7 @@ bool TryGetError(out TError error, out Ok<TValue> success)
 
 // Extract with a default value
 TValue Unwrap(TValue defaultValue)           // Returns value or default
-TValue Unwrap(Func<TValue> valueProvider)    // Returns value or computed default
+TValue Unwrap(Func<TError, TValue> valueProvider) // Returns value or one computed from the error
 TValue? UnwrapOrDefault()                    // Returns value or default(TValue)
 ```
 
@@ -140,12 +140,10 @@ Result<TValue, TNewError> MapError<TNewError>(Func<TError, TNewError> func)
 ```csharp
 // And operations
 Result<TNewValue, TError> And<TNewValue>(Result<TNewValue, TError> result)
-Result<TValue, TError> And(Func<TValue, Result<TValue, TError>> resultProvider)
 Result<TNewValue, TError> And<TNewValue>(Func<TValue, Result<TNewValue, TError>> resultProvider)
 
-// Or operations  
-Result<TValue, TError> Or(Result<TValue, TError> result)
-Result<TValue, TError> Or(Func<TError, Result<TValue, TError>> resultProvider)
+// Or operations
+Result<TValue, TNewError> Or<TNewError>(Result<TValue, TNewError> result)
 Result<TValue, TNewError> Or<TNewError>(Func<TError, Result<TValue, TNewError>> resultProvider)
 ```
 
@@ -159,12 +157,10 @@ Task<Result<TValue, TNewError>> MapError<TValue, TError, TNewError>(Func<TError,
 
 // And
 Task<Result<TNewValue, TError>> And<TValue, TError, TNewValue>(Result<TNewValue, TError> result)
-Task<Result<TNewValue, TError>> And<TValue, TError, TNewValue>(Func<TValue, TNewValue> resultProvider)
 Task<Result<TNewValue, TError>> And<TValue, TError, TNewValue>(Func<TValue, Result<TNewValue, TError>> resultProvider)
 
 // Or
 Task<Result<TValue, TNewError>> Or<TValue, TError, TNewError>(Result<TValue, TNewError> result)
-Task<Result<TValue, TNewError>> Or<TValue, TError, TNewError>(Func<TError, TNewError> resultProvider)
 Task<Result<TValue, TNewError>> Or<TValue, TError, TNewError>(Func<TError, Result<TValue, TNewError>> resultProvider)
 
 // Unwrap / Expect

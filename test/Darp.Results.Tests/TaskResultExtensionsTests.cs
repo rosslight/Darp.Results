@@ -93,7 +93,7 @@ public sealed class TaskResultExtensionsTests
         var first = Task.FromResult<Result<int, Error>>(Error.Error1);
         bool called = false;
 
-        Result<string, Error> result = await first.And(_ =>
+        Result<string, Error> result = await first.And(Result<string, Error> (_) =>
         {
             called = true;
             return "should-not-run";
@@ -108,7 +108,7 @@ public sealed class TaskResultExtensionsTests
     {
         var first = Task.FromResult<Result<int, Error>>(3);
 
-        Result<string, Error> result = await first.And(v =>
+        Result<string, Error> result = await first.And(Result<string, Error> (v) =>
         {
             v.ShouldBe(3);
             return "factory";
@@ -117,35 +117,7 @@ public sealed class TaskResultExtensionsTests
         result.ShouldHaveValue("factory");
     }
 
-    [Fact]
-    public async Task And_Ok_ValueFactoryIsWrappedAsOk()
-    {
-        var first = Task.FromResult<Result<int, Error>>(4);
 
-        Result<string, Error> result = await first.And(v =>
-        {
-            v.ShouldBe(4);
-            return v.ToString();
-        });
-
-        result.ShouldHaveValue("4");
-    }
-
-    [Fact]
-    public async Task And_Err_ValueFactoryIsNotInvoked()
-    {
-        var first = Task.FromResult<Result<int, Error>>(Error.Error1);
-        bool called = false;
-
-        Result<string, Error> result = await first.And(_ =>
-        {
-            called = true;
-            return "should-not-run";
-        });
-
-        called.ShouldBeFalse();
-        result.ShouldHaveError(Error.Error1);
-    }
 
     [Fact]
     public async Task Or_Err_Ok_UsesFallback()
@@ -164,7 +136,7 @@ public sealed class TaskResultExtensionsTests
         var first = Task.FromResult<Result<int, Error>>(5);
         bool called = false;
 
-        Result<int, Error> result = await first.Or(_ =>
+        Result<int, Error> result = await first.Or(Result<int, Error> (_) =>
         {
             called = true;
             return Error.Error1;
@@ -179,7 +151,7 @@ public sealed class TaskResultExtensionsTests
     {
         var first = Task.FromResult<Result<int, Error>>(Error.Error1);
 
-        Result<int, NewError> result = await first.Or(err =>
+        Result<int, NewError> result = await first.Or(Result<int, NewError> (err) =>
         {
             err.ShouldBe(Error.Error1);
             return NewError.Error2;
@@ -188,35 +160,7 @@ public sealed class TaskResultExtensionsTests
         result.ShouldHaveError(NewError.Error2);
     }
 
-    [Fact]
-    public async Task Or_Err_ErrorFactoryIsWrappedAsErr()
-    {
-        var first = Task.FromResult<Result<int, Error>>(Error.Error2);
 
-        Result<int, NewError> result = await first.Or(err =>
-        {
-            err.ShouldBe(Error.Error2);
-            return NewError.Error1;
-        });
-
-        result.ShouldHaveError(NewError.Error1);
-    }
-
-    [Fact]
-    public async Task Or_Ok_ErrorFactoryIsNotInvoked()
-    {
-        var first = Task.FromResult<Result<int, Error>>(8);
-        bool called = false;
-
-        Result<int, NewError> result = await first.Or(_ =>
-        {
-            called = true;
-            return NewError.Error2;
-        });
-
-        called.ShouldBeFalse();
-        result.ShouldHaveValue(8);
-    }
 
     [Fact]
     public async Task Unwrap_Ok_ReturnsValue()

@@ -7,10 +7,19 @@ internal static class Helpers
 {
     public const string ResultNamespace = "Darp.Results";
     public const string ResultName = "Result";
+    public const string OkName = "Ok";
+    public const string ErrName = "Err";
 
+    /// <summary> True for <c>Result&lt;TValue, TError&gt;</c> and its cases <c>Ok&lt;TValue&gt;</c> and <c>Err&lt;TError&gt;</c>. </summary>
     public static bool IsResult([NotNullWhen(true)] this ITypeSymbol? type)
     {
-        return type is INamedTypeSymbol { Arity: 2, OriginalDefinition.Name: ResultName } named
+        return type is INamedTypeSymbol named
+            && named.OriginalDefinition switch
+            {
+                { Arity: 2, Name: ResultName } => true,
+                { Arity: 1, Name: OkName or ErrName } => true,
+                _ => false,
+            }
             && named.ContainingNamespace?.ToDisplayString() == ResultNamespace;
     }
 

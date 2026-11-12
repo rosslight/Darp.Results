@@ -128,4 +128,45 @@ public sealed class ResultUnionTests
         withMetadata.ShouldBe(new Err<string>("x"));
         withMetadata.GetHashCode().ShouldBe(new Err<string>("x").GetHashCode());
     }
+
+    [Fact]
+    public void Cases_ConvertAsCases_WhenPayloadTypeIsObject()
+    {
+        Result<object, string> err = new Err<string>("x", new Dictionary<string, object> { ["k"] = 1 });
+        Result<string, object> ok = Result.Ok("a");
+        Result<object, object> both = Result.Ok<object>(42);
+        Result<ValueType, string> valueType = Result.Err("y");
+
+        err.ShouldHaveError("x");
+        err.Metadata["k"].ShouldBe(1);
+        ok.ShouldHaveValue("a");
+        both.ShouldHaveValue(42);
+        valueType.ShouldHaveError("y");
+    }
+
+    [Fact]
+    public void EarlyReturn_IntoObjectValue_StaysErr()
+    {
+        static Result<object, string> Forward(Result<int, string> r)
+        {
+            if (!r.TryGetValue(out int value, out Err<string> err))
+                return err;
+            return value;
+        }
+
+        Forward(Result.Err("x")).ShouldHaveError("x");
+        Forward(Result.Ok(1)).ShouldHaveValue(1);
+    }
+
+    [Fact]
+    public void CaseMetadata_IsCopied()
+    {
+        var metadata = new Dictionary<string, object> { ["k"] = 1 };
+        Result<int, string> result = new Ok<int>(1, metadata);
+
+        metadata["k"] = 2;
+        metadata["new"] = 3;
+
+        result.Metadata.ShouldBe(new Dictionary<string, object> { ["k"] = 1 });
+    }
 }
