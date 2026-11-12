@@ -22,7 +22,7 @@ public sealed class ResultReturnValueUsedAnalyzerTests
     {
         const string text = """
             Result<int, string> Do() {
-                return null!;
+                return default;
             }
             _ = Do();
             """;
@@ -35,7 +35,7 @@ public sealed class ResultReturnValueUsedAnalyzerTests
     {
         const string text = """
             Result<int, string> Do() {
-                return null!;
+                return default;
             }
             var myVar = Do();
             """;
@@ -48,7 +48,7 @@ public sealed class ResultReturnValueUsedAnalyzerTests
     {
         const string text = """
             Result<int, string> Do() {
-                return null!;
+                return default;
             }
             Do();
             """;
@@ -69,14 +69,32 @@ public sealed class ResultReturnValueUsedAnalyzerTests
         await ResultHelpers.VerifyInMethodAsync<ResultReturnValueUsedAnalyzer>(text, expected);
     }
 
+    [Fact]
+    public async Task CaseReturningMethod_ShouldWarn()
+    {
+        const string text = """
+            Ok<int> MakeOk() => new Ok<int>(1);
+            Err<string> MakeErr() => new Err<string>("x");
+            MakeOk();
+            MakeErr();
+            """;
+
+        DiagnosticResult[] expected =
+        [
+            Verifier.Diagnostic().WithLocation(8, 1).WithArguments("MakeOk"),
+            Verifier.Diagnostic().WithLocation(9, 1).WithArguments("MakeErr"),
+        ];
+        await ResultHelpers.VerifyInMethodAsync<ResultReturnValueUsedAnalyzer>(text, expected);
+    }
+
     // With tasks
 
     [Fact]
     public async Task Task_NoAwait_ShouldNotWarn()
     {
         const string text = """
-            Task<Result<int, string>> MethodWithTask() => Task.FromResult<Result<int, string>>(null!);
-            ValueTask<Result<int, string>> MethodWithValueTask() => ValueTask.FromResult<Result<int, string>>(null!);
+            Task<Result<int, string>> MethodWithTask() => Task.FromResult<Result<int, string>>(default);
+            ValueTask<Result<int, string>> MethodWithValueTask() => ValueTask.FromResult<Result<int, string>>(default);
             MethodWithTask();
             MethodWithValueTask();
             MethodWithTask().ConfigureAwait(false);
@@ -90,8 +108,8 @@ public sealed class ResultReturnValueUsedAnalyzerTests
     public async Task Task_Discard_ShouldNotWarn()
     {
         const string text = """
-            Task<Result<int, string>> MethodWithTask() => Task.FromResult<Result<int, string>>(null!);
-            ValueTask<Result<int, string>> MethodWithValueTask() => ValueTask.FromResult<Result<int, string>>(null!);
+            Task<Result<int, string>> MethodWithTask() => Task.FromResult<Result<int, string>>(default);
+            ValueTask<Result<int, string>> MethodWithValueTask() => ValueTask.FromResult<Result<int, string>>(default);
             _ = await MethodWithTask();
             _ = await MethodWithValueTask();
             _ = await MethodWithTask().ConfigureAwait(false);
@@ -105,8 +123,8 @@ public sealed class ResultReturnValueUsedAnalyzerTests
     public async Task Task_Variable_ShouldNotWarn()
     {
         const string text = """
-            Task<Result<int, string>> MethodWithTask() => Task.FromResult<Result<int, string>>(null!);
-            ValueTask<Result<int, string>> MethodWithValueTask() => ValueTask.FromResult<Result<int, string>>(null!);
+            Task<Result<int, string>> MethodWithTask() => Task.FromResult<Result<int, string>>(default);
+            ValueTask<Result<int, string>> MethodWithValueTask() => ValueTask.FromResult<Result<int, string>>(default);
             var myVar = await MethodWithTask();
             var myVar2 = await MethodWithValueTask();
             var myVar3 = await MethodWithTask().ConfigureAwait(false);
@@ -120,8 +138,8 @@ public sealed class ResultReturnValueUsedAnalyzerTests
     public async Task Task_ShouldWarn()
     {
         const string text = """
-            Task<Result<int, string>> MethodWithTask() => Task.FromResult<Result<int, string>>(null!);
-            ValueTask<Result<int, string>> MethodWithValueTask() => ValueTask.FromResult<Result<int, string>>(null!);
+            Task<Result<int, string>> MethodWithTask() => Task.FromResult<Result<int, string>>(default);
+            ValueTask<Result<int, string>> MethodWithValueTask() => ValueTask.FromResult<Result<int, string>>(default);
             await MethodWithTask();
             await MethodWithValueTask();
             await MethodWithTask().ConfigureAwait(false);

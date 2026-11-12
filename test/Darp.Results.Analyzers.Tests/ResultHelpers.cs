@@ -155,6 +155,7 @@ public static class ResultHelpers
         };
         test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(Result<,>).Assembly.Location));
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net110;
+        test.SolutionTransforms.Add(ResultAnalyzerTest<TAnalyzer>.UseUnionLanguageVersion);
         test.ExpectedDiagnostics.AddRange(expected);
 
         return test.RunAsync(CancellationToken.None);

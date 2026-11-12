@@ -67,22 +67,6 @@ public static class TaskResultExtensions
     /// <typeparam name="TNewValue">Value type of the produced result.</typeparam>
     /// <returns>The produced result if Ok, otherwise the first error.</returns>
     [Pure]
-    public static Task<Result<TNewValue, TError>> And<TValue, TError, TNewValue>(
-        this Task<Result<TValue, TError>> task,
-        Func<TValue, TNewValue> resultProvider
-    )
-    {
-        return task.And<TValue, TError, TNewValue>(value => new Result.Ok<TNewValue, TError>(resultProvider(value)));
-    }
-
-    /// <summary>Combines with a result factory if the awaited task is Ok.</summary>
-    /// <param name="task">The task producing a result.</param>
-    /// <param name="resultProvider">Factory invoked with the Ok value.</param>
-    /// <typeparam name="TValue">Original value type.</typeparam>
-    /// <typeparam name="TError">Error type.</typeparam>
-    /// <typeparam name="TNewValue">Value type of the produced result.</typeparam>
-    /// <returns>The produced result if Ok, otherwise the first error.</returns>
-    [Pure]
     public static async Task<Result<TNewValue, TError>> And<TValue, TError, TNewValue>(
         this Task<Result<TValue, TError>> task,
         Func<TValue, Result<TNewValue, TError>> resultProvider
@@ -109,22 +93,6 @@ public static class TaskResultExtensions
         ArgumentNullException.ThrowIfNull(task);
         Result<TValue, TError> awaited = await task.ConfigureAwait(false);
         return awaited.Or(result);
-    }
-
-    /// <summary>Returns the awaited result or a replacement error result produced by the factory.</summary>
-    /// <param name="task">The task producing a result.</param>
-    /// <param name="resultProvider">Factory invoked with the Err value.</param>
-    /// <typeparam name="TValue">Value type.</typeparam>
-    /// <typeparam name="TError">Original error type.</typeparam>
-    /// <typeparam name="TNewError">Fallback error type.</typeparam>
-    /// <returns>The awaited result if Ok, otherwise the produced fallback.</returns>
-    [Pure]
-    public static Task<Result<TValue, TNewError>> Or<TValue, TError, TNewError>(
-        this Task<Result<TValue, TError>> task,
-        Func<TError, TNewError> resultProvider
-    )
-    {
-        return task.Or<TValue, TError, TNewError>(error => new Result.Err<TValue, TNewError>(resultProvider(error)));
     }
 
     /// <summary>Returns the awaited result or a replacement error result produced by the factory.</summary>

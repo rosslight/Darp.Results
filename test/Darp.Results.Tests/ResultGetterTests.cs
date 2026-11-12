@@ -8,10 +8,9 @@ public sealed class ResultGetterTests
     public void TryGetValue_WithOutErr_PropagatesErrType()
     {
         Result<int, Error> result = Error.Error2;
-        bool ok = result.TryGetValue(out int v, out Err<string, Error>? e);
+        bool ok = result.TryGetValue(out int v, out Err<Error> e);
         ok.ShouldBeFalse();
         v.ShouldBe(0);
-        _ = e.ShouldNotBeNull();
         e.Error.ShouldBe(Error.Error2);
     }
 
@@ -19,10 +18,9 @@ public sealed class ResultGetterTests
     public void TryGetError_WithOutOk_PropagatesOkType()
     {
         Result<int, Error> result = 5;
-        bool isErr = result.TryGetError(out Error err, out Ok<int, NewError>? ok);
+        bool isErr = result.TryGetError(out Error err, out Ok<int> ok);
         isErr.ShouldBeFalse();
         err.ShouldBe(default);
-        _ = ok.ShouldNotBeNull();
         ok.Value.ShouldBe(5);
     }
 
@@ -81,7 +79,7 @@ public sealed class ResultGetterTests
     [Fact]
     public void Expect_ErrWithNullError_ThrowsWithNullPayload()
     {
-        Result<int, string?> result = new Err<int, string?>(null);
+        Result<int, string?> result = new Err<string?>(null);
 
         InvalidOperationException ex = Should.Throw<InvalidOperationException>(() => _ = result.Expect("custom"));
 
@@ -91,7 +89,7 @@ public sealed class ResultGetterTests
     [Fact]
     public void Expect_ErrWithThrowingToString_ThrowsWithFallbackPayload()
     {
-        Result<int, ThrowingToString> result = new Err<int, ThrowingToString>(new ThrowingToString());
+        Result<int, ThrowingToString> result = new Err<ThrowingToString>(new ThrowingToString());
 
         InvalidOperationException ex = Should.Throw<InvalidOperationException>(() => _ = result.Expect("custom"));
 
@@ -127,7 +125,7 @@ public sealed class ResultGetterTests
     [Fact]
     public void ExpectError_OkWithNullValue_ThrowsWithNullPayload()
     {
-        Result<string?, Error> result = new Ok<string?, Error>(null);
+        Result<string?, Error> result = new Ok<string?>(null);
 
         InvalidOperationException ex = Should.Throw<InvalidOperationException>(() => _ = result.ExpectError("err-msg"));
 

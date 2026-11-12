@@ -9,7 +9,10 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.XUnit" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <!-- The tests compile C# 15 code. The analyzers keep building against the older Roslyn so older hosts load them. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="5.9.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" VersionOverride="5.9.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" VersionOverride="5.9.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Shouldly" />
     <PackageReference Include="xunit" />

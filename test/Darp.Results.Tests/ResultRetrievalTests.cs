@@ -54,39 +54,39 @@ public sealed class ResultRetrievalTests
 
     private Result<int, Error> TryGetValueEarlyReturn(Result<string, Error> result)
     {
-        if (!result.TryGetValue(out string? value, out Err<int, Error>? errorResult))
+        if (!result.TryGetValue(out string? value, out Err<Error> errorResult))
             return errorResult;
         return 1;
     }
 
     private Result<string, Error> TryGetValueEarlyReturn2(Result<string, Error> result)
     {
-        if (!result.TryGetValue(out string? value, out Err<string, Error>? errorResult))
+        if (!result.TryGetValue(out string? value, out Err<Error> errorResult))
             return errorResult;
         return value;
     }
 
     public Result<string, StandardError> Xx(Result<int, StandardError> r)
     {
-        if (!r.TryGetValue(out int value, out Err<string, StandardError>? e1))
+        if (!r.TryGetValue(out int value, out Err<StandardError> e1))
             return e1;
-        if (r is Err<int, StandardError> err)
-            return err.As<string>();
+        if (r is Err<StandardError> err)
+            return err;
         return "Ok";
     }
 
     public Result<int, StandardError> Xxx(Result<int, StandardError> r)
     {
-        if (!r.TryGetValue(out int v1, out Err<int, StandardError>? e1))
+        if (!r.TryGetValue(out int v1, out Err<StandardError> e1))
             return e1;
-        if (r is Err<int, StandardError> e2)
+        if (r is Err<StandardError> e2)
             return e2;
         if (!r.TryGetValue(out int v2))
             return r;
         return r switch
         {
-            Ok<int, StandardError>(var value) => value,
-            Err<int, StandardError>(var error) => error,
+            Ok<int>(var value) => value,
+            Err<StandardError>(var error) => error,
         };
     }
 
@@ -95,7 +95,7 @@ public sealed class ResultRetrievalTests
         Result<int, string> r = Try(() => 1).MapError(e => e.Message);
         var result = From<string, int>("42", int.TryParse);
 
-        Result<Func<int>, string> re = null!;
+        Result<Func<int>, string> re = default;
         // Should error
         _ = re.Unwrap(() => 123);
 
@@ -108,8 +108,8 @@ public sealed class ResultRetrievalTests
         Result<Result<int, string>, string> rr = null!;
         return From<string, int>("42", int.TryParse) switch
         {
-            Ok<int, StandardError>(var ok) => throw new System.NotImplementedException(),
-            Err<int, StandardError>(var err) => throw new System.NotImplementedException(),
+            Ok<int>(var ok) => throw new System.NotImplementedException(),
+            Err<StandardError>(var err) => throw new System.NotImplementedException(),
         };
     }
 }

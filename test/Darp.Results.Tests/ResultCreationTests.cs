@@ -1,4 +1,4 @@
-﻿using Darp.Results.Shouldly;
+using Darp.Results.Shouldly;
 using Shouldly;
 
 namespace Darp.Results.Tests;
@@ -34,7 +34,7 @@ public sealed class ResultCreationTests
     {
         const int value = 42;
 
-        var result = new Ok<int, Error>(value);
+        Result<int, Error> result = new Ok<int>(value);
 
         result.ShouldHaveValue(value);
     }
@@ -44,7 +44,7 @@ public sealed class ResultCreationTests
     {
         const Error error = Error.Error1;
 
-        var result = new Err<int, Error>(error);
+        Result<int, Error> result = new Err<Error>(error);
 
         result.ShouldHaveError(error);
     }
@@ -55,7 +55,7 @@ public sealed class ResultCreationTests
         const int value = 42;
         var metadata = new Dictionary<string, object> { ["Key1"] = "Value1", ["Key2"] = 2 };
 
-        var result = new Ok<int, Error>(value, metadata);
+        Result<int, Error> result = new Ok<int>(value, metadata);
 
         result.ShouldHaveValue(value);
         result.Metadata.ShouldBe(metadata);
@@ -67,7 +67,7 @@ public sealed class ResultCreationTests
         const Error error = Error.Error1;
         var metadata = new Dictionary<string, object> { ["Key1"] = "Value1", ["Key2"] = 2 };
 
-        var result = new Err<int, Error>(error, metadata);
+        Result<int, Error> result = new Err<Error>(error, metadata);
 
         result.ShouldHaveError(error);
         result.Metadata.ShouldBe(metadata);

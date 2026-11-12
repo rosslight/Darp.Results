@@ -7,8 +7,8 @@ public sealed class ResultFlattenAndFactoriesTests
     [Fact]
     public void Flatten_OkOk_ReturnsInnerOk()
     {
-        var inner = new Ok<int, Error>(1);
-        var outer = new Ok<Result<int, Error>, Error>(inner);
+        Result<int, Error> inner = new Ok<int>(1);
+        Result<Result<int, Error>, Error> outer = new Ok<Result<int, Error>>(inner);
 
         var flat = Flatten(outer);
 
@@ -18,8 +18,8 @@ public sealed class ResultFlattenAndFactoriesTests
     [Fact]
     public void Flatten_OkErr_ReturnsErr()
     {
-        var inner = new Err<int, Error>(Error.Error1);
-        var outer = new Ok<Result<int, Error>, Error>(inner);
+        Result<int, Error> inner = new Err<Error>(Error.Error1);
+        Result<Result<int, Error>, Error> outer = new Ok<Result<int, Error>>(inner);
 
         var flat = Flatten(outer);
 
@@ -29,7 +29,7 @@ public sealed class ResultFlattenAndFactoriesTests
     [Fact]
     public void Flatten_Err_ReturnsOuterErr()
     {
-        var outer = new Err<Result<int, Error>, Error>(Error.Error2);
+        Result<Result<int, Error>, Error> outer = new Err<Error>(Error.Error2);
 
         var flat = Flatten(outer);
 

@@ -9,7 +9,7 @@ public sealed class ResultMetadataTests
     public void WithMetadata_KeyValue_Value()
     {
         const int value = 42;
-        var result = new Ok<int, Error>(value);
+        Result<int, Error> result = new Ok<int>(value);
 
         Result<int, Error> newResult = result.WithMetadata("TraceId", "abc");
 
@@ -23,7 +23,7 @@ public sealed class ResultMetadataTests
     public void WithMetadata_KeyValue_Error()
     {
         const Error error = Error.Error1;
-        var result = new Err<int, Error>(error);
+        Result<int, Error> result = new Err<Error>(error);
 
         Result<int, Error> newResult = result.WithMetadata("TraceId", 123);
 
@@ -38,7 +38,7 @@ public sealed class ResultMetadataTests
     {
         const int value = 42;
         var metadata = new Dictionary<string, object> { ["Key1"] = "Value1", ["Key2"] = 2 };
-        var result = new Ok<int, Error>(value);
+        Result<int, Error> result = new Ok<int>(value);
         Result<int, Error> newResult = result.WithMetadata(metadata);
 
         result.ShouldHaveValue(value);
@@ -53,7 +53,7 @@ public sealed class ResultMetadataTests
         const Error error = Error.Error1;
         var metadata = new Dictionary<string, object> { ["Key1"] = "Value1", ["Key2"] = 2 };
 
-        var result = new Err<int, Error>(error);
+        Result<int, Error> result = new Err<Error>(error);
         Result<int, Error> newResult = result.WithMetadata(metadata);
 
         result.ShouldHaveError(error);
