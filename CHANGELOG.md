@@ -4,6 +4,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 Content is taken from conventional commits and aggregated in a [release-please](https://github.com/googleapis/release-please) PR.
 
+## [2.0.0](https://github.com/rosslight/Darp.Results/compare/v1.9.1...v2.0.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* support .NET 11 and drop .NET 9 ([#43](https://github.com/rosslight/Darp.Results/issues/43))
+
+### Features
+
+* support .NET 11 and drop .NET 9 ([#43](https://github.com/rosslight/Darp.Results/issues/43)) ([d132c36](https://github.com/rosslight/Darp.Results/commit/d132c3626be21a12b557cccb805af2d15d5777d9))
+
 ## [1.9.1](https://github.com/rosslight/Darp.Results/compare/v1.9.0...v1.9.1) (2026-08-12)
 
 
